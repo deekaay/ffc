@@ -54,7 +54,7 @@ function onSelect(slot: GearSlotName, item: GearItem) {
         <GearSlot
           v-for="cell in row"
           :key="cell.slot"
-          :slot="cell.slot"
+          :slot-name="cell.slot"
           :item="gearset[cell.slot]"
           :job-code="jobCode"
           :label="cell.label"
