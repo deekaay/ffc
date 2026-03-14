@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { QuicklookResults, SimulationResults } from '@/types/simulation'
+import type { QuicklookResults } from '@/types/simulation'
 import { buildPlayer, buildEnemy } from '@/calc/createPlayer'
 import { averageAttackRound, averageWs } from '@/calc/actions'
 import { useCharacterStore } from '@/stores/useCharacterStore'
@@ -8,14 +8,9 @@ import { useGearStore } from '@/stores/useGearStore'
 import type { GearItem } from '@/types/gear'
 import type { EnemyStats } from '@/types/enemy'
 
-let simulationWorker: Worker | null = null
-
 export const useSimulationStore = defineStore('simulation', {
   state: () => ({
     quicklookResults: null as QuicklookResults | null,
-    simulationResults: null as SimulationResults | null,
-    simulationRunning: false,
-    simulationProgress: 0,
   }),
 
   actions: {
@@ -121,65 +116,5 @@ export const useSimulationStore = defineStore('simulation', {
       }
     },
 
-    runSimulation() {
-      if (this.simulationRunning) return
-      this.simulationRunning = true
-      this.simulationProgress = 0
-
-      const charStore = useCharacterStore()
-      const playerTp = this.buildCurrentPlayer('tp')
-      const playerWs = this.buildCurrentPlayer('ws')
-      const enemy = this.buildCurrentEnemy()
-
-      simulationWorker?.terminate()
-      simulationWorker = new Worker(
-        new URL('../workers/simulationWorker.ts', import.meta.url),
-        { type: 'module' },
-      )
-
-      simulationWorker.postMessage({
-        type: 'run',
-        playerTp,
-        playerWs,
-        enemy,
-        wsThreshold: charStore.wsThreshold,
-        wsName: charStore.wsName,
-        wsType: 'Damage dealt',
-      })
-
-      simulationWorker.onmessage = (e) => {
-        if (e.data.type === 'progress') {
-          this.simulationProgress = e.data.percent
-        } else if (e.data.type === 'result') {
-          const r = e.data.data
-          this.simulationResults = {
-            totalDamage: r.totalDamage,
-            tpDamage: r.tpDamage,
-            wsDamage: r.wsDamage,
-            dps: r.totalDps,
-            timeData: r.timeList,
-            damageData: r.damageList,
-            tpDamageData: r.tpDamageList,
-            wsDamageData: r.wsDamageList,
-            avgTpDmg: r.avgTpDmg,
-            avgWsDmg: r.avgWsDmg,
-            avgWsTp: r.avgWsTp,
-          }
-          this.simulationRunning = false
-          this.simulationProgress = 100
-        }
-      }
-
-      simulationWorker.onerror = (e) => {
-        console.error('Simulation worker error:', e)
-        this.simulationRunning = false
-      }
-    },
-
-    cancelSimulation() {
-      simulationWorker?.terminate()
-      simulationWorker = null
-      this.simulationRunning = false
-    },
   },
 })

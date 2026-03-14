@@ -8,7 +8,6 @@ import Tab from 'primevue/tab'
 import TabPanels from 'primevue/tabpanels'
 import TabPanel from 'primevue/tabpanel'
 import InputsTab from '@/components/tabs/InputsTab.vue'
-import OptimizeTab from '@/components/tabs/OptimizeTab.vue'
 import SimulationsTab from '@/components/tabs/SimulationsTab.vue'
 import PlayerStatsTab from '@/components/tabs/PlayerStatsTab.vue'
 import AutomatonTab from '@/components/tabs/AutomatonTab.vue'
@@ -29,17 +28,15 @@ onMounted(async () => {
     <Tabs value="0" class="app-tabs">
       <TabList>
         <Tab value="0">Inputs / Quicklook</Tab>
-        <Tab value="1">Optimize</Tab>
-        <Tab value="2">Simulations</Tab>
-        <Tab value="3">Player Stats</Tab>
-        <Tab v-if="characterStore.mainJob === 'pup'" value="4">Automaton</Tab>
+        <Tab value="1">Simulations</Tab>
+        <Tab value="2">Player Stats</Tab>
+        <Tab v-if="characterStore.mainJob === 'pup'" value="3">Automaton</Tab>
       </TabList>
       <TabPanels>
         <TabPanel value="0"><InputsTab /></TabPanel>
-        <TabPanel value="1"><OptimizeTab /></TabPanel>
-        <TabPanel value="2"><SimulationsTab /></TabPanel>
-        <TabPanel value="3"><PlayerStatsTab /></TabPanel>
-        <TabPanel v-if="characterStore.mainJob === 'pup'" value="4"><AutomatonTab /></TabPanel>
+        <TabPanel value="1"><SimulationsTab /></TabPanel>
+        <TabPanel value="2"><PlayerStatsTab /></TabPanel>
+        <TabPanel v-if="characterStore.mainJob === 'pup'" value="3"><AutomatonTab /></TabPanel>
       </TabPanels>
     </Tabs>
   </div>
