@@ -4,16 +4,12 @@ import InputNumber from 'primevue/inputnumber'
 import Select from 'primevue/select'
 import JobSelector from '@/components/shared/JobSelector.vue'
 import EnemyPanel from '@/components/shared/EnemyPanel.vue'
-import BuffPanel from '@/components/shared/BuffPanel.vue'
-import QuicklookResults from '@/components/shared/QuicklookResults.vue'
-import GearPanel from '@/components/shared/GearPanel.vue'
 import { useCharacterStore } from '@/stores/useCharacterStore'
 import { useBuffStore } from '@/stores/useBuffStore'
 
 const characterStore = useCharacterStore()
 const buffStore = useBuffStore()
 
-// ── Ability helpers ──────────────────────────────────────────────────────────
 function abBool(key: string) {
   return computed({
     get: () => !!(characterStore.abilities[key]),
@@ -28,58 +24,34 @@ function abNum(key: string) {
   })
 }
 
-// WAR
-const berserk   = abBool('Berserk')
-const aggressor = abBool('Aggressor')
-
-// MNK
-const focus     = abBool('Focus')
-const footwork  = abBool('Footwork')
-const impetus   = abBool('Impetus')
-
-// DRK
-const lastResort = abBool('Last Resort')
-const endark2    = abBool('Endark II')
-
-// SAM
-const hasso = abBool('Hasso')
-
-// THF
-const sneakAttack = abBool('Sneak Attack')
-const trickAttack = abBool('Trick Attack')
-
-// DNC
+const berserk        = abBool('Berserk')
+const aggressor      = abBool('Aggressor')
+const focus          = abBool('Focus')
+const footwork       = abBool('Footwork')
+const impetus        = abBool('Impetus')
+const lastResort     = abBool('Last Resort')
+const endark2        = abBool('Endark II')
+const hasso          = abBool('Hasso')
+const sneakAttack    = abBool('Sneak Attack')
+const trickAttack    = abBool('Trick Attack')
 const buildingFlourish = abBool('Building Flourish')
-const saberDance       = abBool('Saber Dance')
-
-// Cross-job
-const bloodRage = abBool('Blood Rage')
-const warcry    = abBool('Warcry')
-
-// Enspells / misc
-const enspell    = abBool('EnSpell')
-const enlight2   = abBool('Enlight II')
-const composure  = abBool('Composure')
-
-// RNG
-const velocityShot = abBool('Velocity Shot')
-const doubleShot   = abBool('Double Shot')
-
-// COR
-const tripleShot = abBool('Triple Shot')
-
-// NIN
-const innin = abBool('Innin')
-
-// Aftermath
-const aftermath = abNum('Aftermath')
-
-// Enhancing Skill
+const saberDance     = abBool('Saber Dance')
+const velocityShot   = abBool('Velocity Shot')
+const doubleShot     = abBool('Double Shot')
+const tripleShot     = abBool('Triple Shot')
+const innin          = abBool('Innin')
+const bloodRage      = abBool('Blood Rage')
+const warcry         = abBool('Warcry')
+const enspell        = abBool('EnSpell')
+const enlight2       = abBool('Enlight II')
+const composure      = abBool('Composure')
+const aftermath      = abNum('Aftermath')
 const enhancingSkill = abNum('Enhancing Skill')
 
-// Storm spell select (mirrors buffStore.stormSpell for convenience)
 const stormOptions = computed(() => {
-  const keys = buffStore.buffsData ? Object.keys(buffStore.buffsData.whm).filter((k) => k.toLowerCase().includes('storm')) : []
+  const keys = buffStore.buffsData
+    ? Object.keys(buffStore.buffsData.whm).filter((k) => k.toLowerCase().includes('storm'))
+    : []
   return [{ label: 'None', value: 'None' }, ...keys.map((k) => ({ label: k, value: k }))]
 })
 
@@ -87,18 +59,11 @@ const stormModel = computed({
   get: () => buffStore.stormSpell,
   set: (v: string) => { buffStore.stormSpell = v },
 })
-
-// ── Gear ─────────────────────────────────────────────────────────────────────
-function onGearUpdate(slot: import('@/types/gear').GearSlotName, item: import('@/types/gear').GearItem) {
-  characterStore.setGear('quicklook', slot, item)
-}
 </script>
 
 <template>
-  <div class="inputs-tab">
-    <!-- Main grid -->
+  <div class="job-enemy-tab">
     <div class="main-grid">
-      <!-- LEFT: Job selector + Abilities -->
       <div class="col col-left">
         <JobSelector />
 
@@ -110,59 +75,49 @@ function onGearUpdate(slot: import('@/types/gear').GearSlotName, item: import('@
             <label><input type="checkbox" v-model="berserk" /> Berserk</label>
             <label><input type="checkbox" v-model="aggressor" /> Aggressor</label>
           </div>
-
           <div class="ability-group">
             <div class="group-label">MNK</div>
             <label><input type="checkbox" v-model="focus" /> Focus</label>
             <label><input type="checkbox" v-model="footwork" /> Footwork</label>
             <label><input type="checkbox" v-model="impetus" /> Impetus</label>
           </div>
-
           <div class="ability-group">
             <div class="group-label">DRK</div>
             <label><input type="checkbox" v-model="lastResort" /> Last Resort</label>
             <label><input type="checkbox" v-model="endark2" /> Endark II</label>
           </div>
-
           <div class="ability-group">
             <div class="group-label">SAM</div>
             <label><input type="checkbox" v-model="hasso" /> Hasso</label>
           </div>
-
           <div class="ability-group">
             <div class="group-label">THF</div>
             <label><input type="checkbox" v-model="sneakAttack" /> Sneak Attack</label>
             <label><input type="checkbox" v-model="trickAttack" /> Trick Attack</label>
           </div>
-
           <div class="ability-group">
             <div class="group-label">DNC</div>
             <label><input type="checkbox" v-model="buildingFlourish" /> Building Flourish</label>
             <label><input type="checkbox" v-model="saberDance" /> Saber Dance</label>
           </div>
-
           <div class="ability-group">
             <div class="group-label">RNG</div>
             <label><input type="checkbox" v-model="velocityShot" /> Velocity Shot</label>
             <label><input type="checkbox" v-model="doubleShot" /> Double Shot</label>
           </div>
-
           <div class="ability-group">
             <div class="group-label">COR</div>
             <label><input type="checkbox" v-model="tripleShot" /> Triple Shot</label>
           </div>
-
           <div class="ability-group">
             <div class="group-label">NIN</div>
             <label><input type="checkbox" v-model="innin" /> Innin</label>
           </div>
-
           <div class="ability-group">
             <div class="group-label">Cross</div>
             <label><input type="checkbox" v-model="bloodRage" /> Blood Rage</label>
             <label><input type="checkbox" v-model="warcry" /> Warcry</label>
           </div>
-
           <div class="ability-group">
             <div class="group-label">Misc</div>
             <label><input type="checkbox" v-model="enspell" /> EnSpell</label>
@@ -172,71 +127,28 @@ function onGearUpdate(slot: import('@/types/gear').GearSlotName, item: import('@
 
           <div class="field-row mt4">
             <label>Aftermath</label>
-            <InputNumber
-              v-model="aftermath"
-              :min="0"
-              :max="3"
-              :step="1"
-              show-buttons
-              class="compact-input"
-            />
+            <InputNumber v-model="aftermath" :min="0" :max="3" :step="1" show-buttons class="compact-input" />
           </div>
-
           <div class="field-row mt4">
             <label>Enhancing Skill</label>
-            <InputNumber
-              v-model="enhancingSkill"
-              :min="0"
-              :max="600"
-              :step="1"
-              class="compact-input"
-            />
+            <InputNumber v-model="enhancingSkill" :min="0" :max="600" :step="1" class="compact-input" />
           </div>
-
           <div class="field-row mt4">
             <label>Storm Spell</label>
-            <Select
-              v-model="stormModel"
-              :options="stormOptions"
-              option-label="label"
-              option-value="value"
-              class="compact-select"
-            />
+            <Select v-model="stormModel" :options="stormOptions" option-label="label" option-value="value" class="compact-select" />
           </div>
         </div>
       </div>
 
-      <!-- MIDDLE: Enemy panel -->
-      <div class="col col-middle">
+      <div class="col col-right">
         <EnemyPanel />
       </div>
-
-      <!-- RIGHT: Gear panel -->
-      <div class="col col-right">
-        <GearPanel
-          context="quicklook"
-          :gearset="characterStore.quicklookGearset"
-          :job-code="characterStore.mainJob"
-          title="Quicklook Gear"
-          @update:gear="onGearUpdate"
-        />
-      </div>
-    </div>
-
-    <!-- BUFFS full-width -->
-    <div class="full-row">
-      <BuffPanel />
-    </div>
-
-    <!-- QUICKLOOK RESULTS full-width -->
-    <div class="full-row">
-      <QuicklookResults />
     </div>
   </div>
 </template>
 
 <style scoped>
-.inputs-tab {
+.job-enemy-tab {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -258,24 +170,9 @@ function onGearUpdate(slot: import('@/types/gear').GearSlotName, item: import('@
   gap: 8px;
 }
 
-.col-left {
-  flex: 0 0 220px;
-}
+.col-left  { flex: 0 0 220px; }
+.col-right { flex: 0 0 260px; }
 
-.col-middle {
-  flex: 0 0 260px;
-}
-
-.col-right {
-  flex: 1 1 360px;
-  min-width: 320px;
-}
-
-.full-row {
-  width: 100%;
-}
-
-/* Abilities panel */
 .abilities-panel {
   padding: 8px;
   background: #16213e;
@@ -336,28 +233,11 @@ function onGearUpdate(slot: import('@/types/gear').GearSlotName, item: import('@
   flex-shrink: 0;
 }
 
-.compact-input {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.78rem;
-}
+.compact-input  { flex: 1; min-width: 0; font-size: 0.78rem; }
+.compact-select { flex: 1; min-width: 0; font-size: 0.78rem; }
+.mt4 { margin-top: 4px; }
 
-.compact-select {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.78rem;
-}
-
-.mt4 {
-  margin-top: 4px;
-}
-
-@media (max-width: 768px) {
-  .col-left,
-  .col-middle,
-  .col-right {
-    flex: 1 1 100%;
-    min-width: 0;
-  }
+@media (max-width: 600px) {
+  .col-left, .col-right { flex: 1 1 100%; }
 }
 </style>
