@@ -30,7 +30,6 @@ watchEffect(() => {
   JSON.stringify(charStore.abilities)
   charStore.mainJob; charStore.subJob; charStore.masterLevel
   JSON.stringify(charStore.enemy)
-  buffStore.brdEnabled; buffStore.corEnabled; buffStore.geoEnabled; buffStore.whmEnabled
   JSON.stringify(buffStore.songs); JSON.stringify(buffStore.rolls); JSON.stringify(buffStore.bubbles)
   buffStore.food; buffStore.soulVoice; buffStore.marcato; buffStore.bolster; buffStore.blazeOfGlory
   buffStore.shellV; buffStore.hasteSpell; buffStore.diaSpell; buffStore.stormSpell

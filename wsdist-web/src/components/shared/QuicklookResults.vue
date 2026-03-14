@@ -22,16 +22,12 @@ watchEffect(() => {
   const _e = characterStore.wsThreshold
   const _f = JSON.stringify(characterStore.quicklookGearset)
   const _g = JSON.stringify(characterStore.enemy)
-  const _h = buffStore.brdEnabled
-  const _i = buffStore.corEnabled
-  const _j = buffStore.geoEnabled
-  const _k = buffStore.whmEnabled
-  const _l = buffStore.food
+  const _h = buffStore.food
   const _m = JSON.stringify(buffStore.songs)
   const _n = JSON.stringify(buffStore.rolls)
   const _o = JSON.stringify(buffStore.bubbles)
   const _p = gearStore.loaded
-  void [_, _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p]
+  void [_, _a, _b, _c, _d, _e, _f, _g, _h, _m, _n, _o, _p]
 
   if (timer) clearTimeout(timer)
   timer = setTimeout(() => simulationStore.runQuicklook(), 200)

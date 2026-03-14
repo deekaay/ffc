@@ -42,7 +42,6 @@ export const useBuffStore = defineStore('buffs', {
     buffsData: null as BuffsData | null,
 
     // BRD
-    brdEnabled: false,
     songs: [
       { name: 'None' }, { name: 'None' }, { name: 'None' }, { name: 'None' },
     ] as SongSlot[],
@@ -51,7 +50,6 @@ export const useBuffStore = defineStore('buffs', {
     songBonus: 0,          // e.g. 7 means "Songs +7"
 
     // COR
-    corEnabled: false,
     rolls: [
       { name: 'None', value: 'V' },
       { name: 'None', value: 'V' },
@@ -64,7 +62,6 @@ export const useBuffStore = defineStore('buffs', {
     lightShot: false,
 
     // GEO
-    geoEnabled: false,
     bubbles: [
       { type: 'Indi' as const, name: 'None' },
       { type: 'Geo' as const, name: 'None' },
@@ -76,7 +73,6 @@ export const useBuffStore = defineStore('buffs', {
     bubblePotency: 70,      // % of debuff potency (0–100)
 
     // WHM
-    whmEnabled: false,
     hasteSpell: 'None' as string,
     diaSpell: 'None' as string,
     boostSpell: 'None' as string,
@@ -112,51 +108,47 @@ export const useBuffStore = defineStore('buffs', {
       // -----------------------------------------------------------------------
       // BRD buffs
       // -----------------------------------------------------------------------
-      if (state.brdEnabled) {
-        for (let i = 0; i < state.songs.length; i++) {
-          const songName = state.songs[i].name
-          if (!songName || songName === 'None') continue
-          const entry = data.brd[songName]
-          if (!entry) continue
-          const songBonusLimit = data.brd_song_limits[songName] ?? 99
-          const sv = 1.0 + +state.soulVoice
-          const marcatoMult = (i === 0 && state.marcato) ? 1.5 : 1.0
-          const bonus = Math.min(songBonusLimit, state.songBonus)
-          for (const stat of Object.keys(entry)) {
-            const vals = entry[stat]
-            const minuetAtk = (songName.toLowerCase().includes('minuet') && (stat === 'Attack' || stat === 'Ranged Attack')) ? 20 : 0
-            const val = sv * marcatoMult * (vals[0] + bonus * vals[1]) + minuetAtk
-            add(buffs.brd, stat, val)
-          }
+      for (let i = 0; i < state.songs.length; i++) {
+        const songName = state.songs[i].name
+        if (!songName || songName === 'None') continue
+        const entry = data.brd[songName]
+        if (!entry) continue
+        const songBonusLimit = data.brd_song_limits[songName] ?? 99
+        const sv = 1.0 + +state.soulVoice
+        const marcatoMult = (i === 0 && state.marcato) ? 1.5 : 1.0
+        const bonus = Math.min(songBonusLimit, state.songBonus)
+        for (const stat of Object.keys(entry)) {
+          const vals = entry[stat]
+          const minuetAtk = (songName.toLowerCase().includes('minuet') && (stat === 'Attack' || stat === 'Ranged Attack')) ? 20 : 0
+          const val = sv * marcatoMult * (vals[0] + bonus * vals[1]) + minuetAtk
+          add(buffs.brd, stat, val)
         }
-        buffs.brd['Attack'] = Math.trunc(buffs.brd['Attack'] ?? 0)
-        buffs.brd['Ranged Attack'] = Math.trunc(buffs.brd['Ranged Attack'] ?? 0)
       }
+      buffs.brd['Attack'] = Math.trunc(buffs.brd['Attack'] ?? 0)
+      buffs.brd['Ranged Attack'] = Math.trunc(buffs.brd['Ranged Attack'] ?? 0)
 
       // -----------------------------------------------------------------------
       // COR buffs
       // -----------------------------------------------------------------------
-      if (state.corEnabled) {
-        for (let i = 0; i < state.rolls.length; i++) {
-          const rollName = state.rolls[i].name.split(' ')[0] // strip trailing words
-          if (!rollName || rollName === 'None') continue
-          const entry = data.cor[rollName]
-          if (!entry) continue
-          const rollVal = state.rolls[i].value // "I"..."XI"
-          const crookedMult = (i === 0 || i === 2) && state.crookedCards ? 1.2 : 1.0
-          for (const stat of Object.keys(entry)) {
-            const vals = entry[stat]
-            const base = vals[0][rollVal] ?? 0
-            const bonusIncrement = vals[1]
-            const jobBonusVal = state.jobBonus ? vals[2] : 0
-            const val = crookedMult * (base + state.rollBonus * bonusIncrement + jobBonusVal)
-            add(buffs.cor, stat, val)
-          }
+      for (let i = 0; i < state.rolls.length; i++) {
+        const rollName = state.rolls[i].name.split(' ')[0] // strip trailing words
+        if (!rollName || rollName === 'None') continue
+        const entry = data.cor[rollName]
+        if (!entry) continue
+        const rollVal = state.rolls[i].value // "I"..."XI"
+        const crookedMult = (i === 0 || i === 2) && state.crookedCards ? 1.2 : 1.0
+        for (const stat of Object.keys(entry)) {
+          const vals = entry[stat]
+          const base = vals[0][rollVal] ?? 0
+          const bonusIncrement = vals[1]
+          const jobBonusVal = state.jobBonus ? vals[2] : 0
+          const val = crookedMult * (base + state.rollBonus * bonusIncrement + jobBonusVal)
+          add(buffs.cor, stat, val)
         }
       }
 
-      // COR debuff: Light Shot (requires Dia + WHM enabled)
-      if (state.lightShot && state.whmEnabled && state.diaSpell.toLowerCase().includes('dia')) {
+      // COR debuff: Light Shot (requires Dia spell set)
+      if (state.lightShot && state.diaSpell.toLowerCase().includes('dia')) {
         const lightShot = data.cor_debuffs['Light Shot']
         if (lightShot) {
           for (const stat of Object.keys(lightShot)) add(debuffs, stat, lightShot[stat])
@@ -166,30 +158,28 @@ export const useBuffStore = defineStore('buffs', {
       // -----------------------------------------------------------------------
       // GEO buffs and debuffs
       // -----------------------------------------------------------------------
-      if (state.geoEnabled) {
-        for (const bubble of state.bubbles) {
-          const bubbleName = bubble.name
-          if (!bubbleName || bubbleName === 'None') continue
-          const isEntrust = bubble.type === 'Entrust'
-          const bonus = isEntrust ? 0 : state.bubbleBonus
-          const bolsterMult = !isEntrust && state.bolster ? 2.0 : 1.0
-          const bogMult = bubble.type === 'Geo' && state.blazeOfGlory ? 1.5 : 1.0
+      for (const bubble of state.bubbles) {
+        const bubbleName = bubble.name
+        if (!bubbleName || bubbleName === 'None') continue
+        const isEntrust = bubble.type === 'Entrust'
+        const bonus = isEntrust ? 0 : state.bubbleBonus
+        const bolsterMult = !isEntrust && state.bolster ? 2.0 : 1.0
+        const bogMult = bubble.type === 'Geo' && state.blazeOfGlory ? 1.5 : 1.0
 
-          const geoEntry = data.geo[bubbleName]
-          if (geoEntry) {
-            for (const stat of Object.keys(geoEntry)) {
-              const vals = geoEntry[stat]
-              add(buffs.geo, stat, bolsterMult * bogMult * (vals[0] + bonus * vals[1]))
-            }
+        const geoEntry = data.geo[bubbleName]
+        if (geoEntry) {
+          for (const stat of Object.keys(geoEntry)) {
+            const vals = geoEntry[stat]
+            add(buffs.geo, stat, bolsterMult * bogMult * (vals[0] + bonus * vals[1]))
           }
+        }
 
-          const geoDebuffEntry = data.geo_debuffs[bubbleName]
-          if (geoDebuffEntry) {
-            const potency = state.bubblePotency / 100
-            for (const stat of Object.keys(geoDebuffEntry)) {
-              const vals = geoDebuffEntry[stat]
-              add(debuffs, stat, bolsterMult * bogMult * (vals[0] + bonus * vals[1]) * potency)
-            }
+        const geoDebuffEntry = data.geo_debuffs[bubbleName]
+        if (geoDebuffEntry) {
+          const potency = state.bubblePotency / 100
+          for (const stat of Object.keys(geoDebuffEntry)) {
+            const vals = geoDebuffEntry[stat]
+            add(debuffs, stat, bolsterMult * bogMult * (vals[0] + bonus * vals[1]) * potency)
           }
         }
       }
@@ -197,18 +187,16 @@ export const useBuffStore = defineStore('buffs', {
       // -----------------------------------------------------------------------
       // WHM buffs and debuffs
       // -----------------------------------------------------------------------
-      if (state.whmEnabled) {
-        const activeSpells = [state.hasteSpell, state.diaSpell, state.boostSpell, state.stormSpell]
-        for (const spellName of activeSpells) {
-          if (!spellName || spellName === 'None') continue
-          const whmEntry = data.whm[spellName]
-          if (whmEntry) {
-            for (const stat of Object.keys(whmEntry)) add(buffs.whm, stat, whmEntry[stat])
-          }
-          const whmDebuffEntry = data.whm_debuffs?.[spellName]
-          if (whmDebuffEntry) {
-            for (const stat of Object.keys(whmDebuffEntry)) add(debuffs, stat, whmDebuffEntry[stat])
-          }
+      const activeSpells = [state.hasteSpell, state.diaSpell, state.boostSpell, state.stormSpell]
+      for (const spellName of activeSpells) {
+        if (!spellName || spellName === 'None') continue
+        const whmEntry = data.whm[spellName]
+        if (whmEntry) {
+          for (const stat of Object.keys(whmEntry)) add(buffs.whm, stat, whmEntry[stat])
+        }
+        const whmDebuffEntry = data.whm_debuffs?.[spellName]
+        if (whmDebuffEntry) {
+          for (const stat of Object.keys(whmDebuffEntry)) add(debuffs, stat, whmDebuffEntry[stat])
         }
       }
       if (state.shellV) {
@@ -244,10 +232,10 @@ export const useBuffStore = defineStore('buffs', {
     key: 'wsdist-buffs',
     storage: localStorage,
     pick: [
-      'brdEnabled','songs','soulVoice','marcato','songBonus',
-      'corEnabled','rolls','rollBonus','crookedCards','jobBonus','lightShot',
-      'geoEnabled','bubbles','bolster','blazeOfGlory','bubbleBonus','bubblePotency',
-      'whmEnabled','hasteSpell','diaSpell','boostSpell','stormSpell','shellV',
+      'songs','soulVoice','marcato','songBonus',
+      'rolls','rollBonus','crookedCards','jobBonus','lightShot',
+      'bubbles','bolster','blazeOfGlory','bubbleBonus','bubblePotency',
+      'hasteSpell','diaSpell','boostSpell','stormSpell','shellV',
       'food',
     ],
   },

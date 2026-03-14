@@ -51,11 +51,8 @@ const foodOptions = computed(() => {
   <div class="buff-panel">
     <!-- BRD ------------------------------------------------------------------>
     <div class="buff-section">
-      <div class="section-header">
-        <input type="checkbox" v-model="buffStore.brdEnabled" id="brd-enable" />
-        <label for="brd-enable" class="section-title">BRD</label>
-      </div>
-      <div v-show="buffStore.brdEnabled" class="section-body">
+      <div class="section-title">BRD</div>
+      <div class="section-body">
         <div class="songs-grid">
           <div v-for="(song, i) in buffStore.songs" :key="i" class="field-row">
             <label class="slot-label">Song {{ i + 1 }}</label>
@@ -81,11 +78,8 @@ const foodOptions = computed(() => {
 
     <!-- COR ------------------------------------------------------------------>
     <div class="buff-section">
-      <div class="section-header">
-        <input type="checkbox" v-model="buffStore.corEnabled" id="cor-enable" />
-        <label for="cor-enable" class="section-title">COR</label>
-      </div>
-      <div v-show="buffStore.corEnabled" class="section-body">
+      <div class="section-title">COR</div>
+      <div class="section-body">
         <div class="rolls-grid">
           <div v-for="(roll, i) in buffStore.rolls" :key="i" class="roll-row">
             <label class="slot-label">Roll {{ i + 1 }}</label>
@@ -118,11 +112,8 @@ const foodOptions = computed(() => {
 
     <!-- GEO ------------------------------------------------------------------>
     <div class="buff-section">
-      <div class="section-header">
-        <input type="checkbox" v-model="buffStore.geoEnabled" id="geo-enable" />
-        <label for="geo-enable" class="section-title">GEO</label>
-      </div>
-      <div v-show="buffStore.geoEnabled" class="section-body">
+      <div class="section-title">GEO</div>
+      <div class="section-body">
         <div class="bubbles-grid">
           <div v-for="(bubble, i) in buffStore.bubbles" :key="i" class="field-row">
             <label class="slot-label">{{ bubble.type }}</label>
@@ -154,11 +145,8 @@ const foodOptions = computed(() => {
 
     <!-- WHM ------------------------------------------------------------------>
     <div class="buff-section">
-      <div class="section-header">
-        <input type="checkbox" v-model="buffStore.whmEnabled" id="whm-enable" />
-        <label for="whm-enable" class="section-title">WHM</label>
-      </div>
-      <div v-show="buffStore.whmEnabled" class="section-body">
+      <div class="section-title">WHM</div>
+      <div class="section-body">
         <div class="whm-grid">
           <div class="field-row">
             <label>Haste</label>
@@ -224,14 +212,8 @@ const foodOptions = computed(() => {
   flex: 0 0 auto;
 }
 
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
 .section-title {
+  margin-bottom: 4px;
   font-size: 0.75rem;
   font-weight: 700;
   color: #a0c4ff;
