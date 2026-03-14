@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash -l -c \"cd /srv/ffc/wsdist-web && npm install && npm install pinia pinia-plugin-persistedstate @vueuse/core primevue primeicons @primevue/themes chart.js vue-chartjs && npm install -D @types/node vite-plugin-static-copy 2>&1 | grep -E ''added|found|error|warn'' | tail -12\")",
+      "Bash(bash -l -c \"npx tsc --version\")",
+      "Bash(bash -l -c \"npm run build 2>&1\")",
+      "Bash(python3 extract_gear.py)",
+      "Bash(python3 extract_misc.py)",
+      "Bash(bash -l -c \"cd /srv/ffc/wsdist-web && npm run build 2>&1\")",
+      "Bash(python3 -c \":*)",
+      "Bash(ls /srv/ffc/wsdist-web/dist/assets/*.js)",
+      "Bash(ls /srv/ffc/wsdist-web/src/calc/*.ts)",
+      "Bash(bash -l -c \"npm run build -- --report 2>&1 | head -5\")",
+      "Bash(bash -l -c \"npx vite build --reportCompressedSize false 2>&1\")",
+      "Bash(bash -l -c \"grep -l ''actions\\\\|createPlayer\\\\|weaponskill'' /srv/ffc/wsdist-web/dist/assets/index-DCb4DBbV.js | head -5\")",
+      "Bash(bash -l -c \"grep -c ''averageWs\\\\|buildPlayer\\\\|getWeaponskillInfo'' /srv/ffc/wsdist-web/dist/assets/index-DCb4DBbV.js\")",
+      "Bash(bash -l -c \"npx vite preview --port 4173 &\")",
+      "Bash(curl -s http://localhost:4173/)",
+      "Bash(pkill -f \"vite preview\")"
+    ]
+  }
+}
