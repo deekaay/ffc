@@ -17,6 +17,9 @@
       "Bash(bash -l -c \"npx vite preview --port 4173 &\")",
       "Bash(curl -s http://localhost:4173/)",
       "Bash(pkill -f \"vite preview\")"
+    ],
+    "additionalDirectories": [
+      "/srv/ffc/wsdist-web/src/components/tabs"
     ]
   }
 }
