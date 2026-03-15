@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import Select from 'primevue/select'
 import InputNumber from 'primevue/inputnumber'
 import { useCharacterStore, JOB_NAMES, JOBS_DICT } from '@/stores/useCharacterStore'
-import { useGearStore } from '@/stores/useGearStore'
+import type { JobCode } from '@/stores/useCharacterStore'
+import { WS_BY_JOB, DEFAULT_WS_BY_JOB } from '@/data/weaponskillsByJob'
 
 const characterStore = useCharacterStore()
-const gearStore = useGearStore()
 
 const jobOptions = JOB_NAMES.map((name) => ({
   label: name,
@@ -14,22 +14,31 @@ const jobOptions = JOB_NAMES.map((name) => ({
 }))
 
 const wsNameOptions = computed(() => {
-  const names = Object.keys(gearStore.allGear).filter((n) => {
-    const item = gearStore.allGear[n]
-    return item && (item as Record<string, unknown>)['WS'] === true
-  })
-  if (names.length === 0) return [{ label: characterStore.wsName, value: characterStore.wsName }]
-  return names.map((n) => ({ label: n, value: n }))
+  return (WS_BY_JOB[characterStore.mainJob] ?? []).map((n) => ({ label: n, value: n }))
 })
+
+function enforceWsName(jobCode: JobCode) {
+  const available = WS_BY_JOB[jobCode] ?? []
+  if (!available.includes(characterStore.wsName)) {
+    // Prefer the job default, then first available — keep current if no options exist
+    characterStore.wsName = DEFAULT_WS_BY_JOB[jobCode] ?? available[0] ?? characterStore.wsName
+  }
+}
+
+// On mount, validate any persisted wsName against the current job
+onMounted(() => enforceWsName(characterStore.mainJob))
 
 const mainJobModel = computed({
   get: () => characterStore.mainJob,
-  set: (v: string) => characterStore.setMainJob(v),
+  set: (v: JobCode) => {
+    characterStore.setMainJob(v)
+    enforceWsName(v)
+  },
 })
 
 const subJobModel = computed({
   get: () => characterStore.subJob,
-  set: (v: string) => characterStore.setSubJob(v),
+  set: (v: JobCode) => characterStore.setSubJob(v),
 })
 
 const masterLevelModel = computed({

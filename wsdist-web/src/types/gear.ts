@@ -18,4 +18,3 @@ export type GearSlotName =
 
 export type Gearset = Record<GearSlotName, GearItem>
 
-export type GearContext = 'quicklook' | 'tp' | 'ws'

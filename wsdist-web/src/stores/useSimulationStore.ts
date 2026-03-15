@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia'
-import type { QuicklookResults } from '@/types/simulation'
+import type { SetResults } from '@/types/simulation'
+import type { Player } from '@/types/player'
 import { buildPlayer, buildEnemy } from '@/calc/createPlayer'
 import { averageAttackRound, averageWs } from '@/calc/actions'
 import { useCharacterStore } from '@/stores/useCharacterStore'
+import type { GearContext } from '@/stores/useCharacterStore'
+import { RANGED_WS } from '@/data/weaponskillsByJob'
 import { useBuffStore } from '@/stores/useBuffStore'
 import { useGearStore } from '@/stores/useGearStore'
 import type { GearItem } from '@/types/gear'
@@ -10,27 +13,30 @@ import type { EnemyStats } from '@/types/enemy'
 
 export const useSimulationStore = defineStore('simulation', {
   state: () => ({
-    quicklookResults: null as QuicklookResults | null,
+    set1Results: null as SetResults | null,
+    set2Results: null as SetResults | null,
+    players: {
+      tp1: null as Player | null,
+      ws1: null as Player | null,
+      tp2: null as Player | null,
+      ws2: null as Player | null,
+    },
   }),
 
   actions: {
-    /**
-     * Build a Player object from the current character + buff state.
-     * context: 'quicklook' | 'tp' | 'ws'
-     */
-    buildCurrentPlayer(context: 'quicklook' | 'tp' | 'ws') {
+    buildCurrentPlayer(context: GearContext) {
       const charStore = useCharacterStore()
       const buffStore = useBuffStore()
       const gearStore = useGearStore()
 
-      const gearset = context === 'tp' ? charStore.tpGearset
-                    : context === 'ws' ? charStore.wsGearset
-                    : charStore.quicklookGearset
+      const gearset = context === 'tp1' ? charStore.tpGearset
+                    : context === 'ws1' ? charStore.wsGearset
+                    : context === 'tp2' ? charStore.tpGearset2
+                    : charStore.wsGearset2
 
       const { buffs, debuffs: _debuffs } = buffStore.aggregatedBuffs
-      void _debuffs // debuffs applied to enemy separately
+      void _debuffs
 
-      // Inject food into buffs.food from allFood lookup
       const foodName = buffStore.food
       const foodItem = gearStore.allFood[foodName]
       if (foodItem) {
@@ -45,7 +51,6 @@ export const useSimulationStore = defineStore('simulation', {
         buffs['food'] = foodBuf
       }
 
-      // Add stormSpell name to abilities for enspell calc
       const abilities: Record<string, boolean | number | string> = {
         ...charStore.abilities,
         'Storm spell': buffStore.stormSpell !== 'None' ? buffStore.stormSpell : 'None',
@@ -67,12 +72,10 @@ export const useSimulationStore = defineStore('simulation', {
       const { debuffs } = buffStore.aggregatedBuffs
 
       const enemyRaw = { ...charStore.enemy } as Record<string, unknown>
-      // Apply Base Defense for Nandaka calculation
       enemyRaw['Base Defense'] = charStore.enemy.Defense
 
       const enemy = buildEnemy(enemyRaw)
 
-      // Apply debuffs to enemy stats
       for (const [stat, val] of Object.entries(debuffs)) {
         const key = stat as keyof EnemyStats
         if (key in enemy) {
@@ -83,38 +86,51 @@ export const useSimulationStore = defineStore('simulation', {
       return enemy
     },
 
-    runQuicklook() {
+    runPair(pair: 1 | 2) {
       try {
         const charStore = useCharacterStore()
-        const player = this.buildCurrentPlayer('quicklook')
+        const tpContext: GearContext = pair === 1 ? 'tp1' : 'tp2'
+        const wsContext: GearContext = pair === 1 ? 'ws1' : 'ws2'
+
+        const tpPlayer = this.buildCurrentPlayer(tpContext)
+        const wsPlayer = this.buildCurrentPlayer(wsContext)
         const enemy = this.buildCurrentEnemy()
 
-        const tpRound = averageAttackRound(player, enemy, charStore.wsThreshold / 2, charStore.wsThreshold, false)
-        const wsResult = averageWs(player, enemy, charStore.wsName, charStore.wsThreshold, 'Damage dealt', false)
+        const wsType = RANGED_WS.has(charStore.wsName) ? 'ranged' : 'melee'
 
-        const timePerAttackRound = (player.stats['timePerAttackRound'] as number) ?? 3
+        const tpRound = averageAttackRound(tpPlayer, enemy, charStore.wsThreshold / 2, charStore.wsThreshold, false)
+        const wsResult = averageWs(wsPlayer, enemy, charStore.wsName, charStore.wsThreshold, wsType, false)
+
+        const timePerAttackRound = (tpPlayer.stats['timePerAttackRound'] as number) ?? 3
         const avgTpRoundDmg = tpRound.physicalDamage + tpRound.magicalDamage
 
-        // Time to WS: time to accumulate wsThreshold TP
         const tpPerRound = tpRound.tpReturn || 1
-        const roundsToWs = Math.max(1, (charStore.wsThreshold - (player.stats['TP Bonus'] as number ?? 0)) / tpPerRound)
-        const timeToWs = roundsToWs * timePerAttackRound + 2.0 // +2s forced delay
+        const roundsToWs = Math.max(1, (charStore.wsThreshold - (tpPlayer.stats['TP Bonus'] as number ?? 0)) / tpPerRound)
+        const timeToWs = roundsToWs * timePerAttackRound + 2.0
 
         const tpPhaseDamage = roundsToWs * avgTpRoundDmg
-        const totalCycleTime = timeToWs
-        const dps = (tpPhaseDamage + wsResult.damage) / totalCycleTime
+        const dps = (tpPhaseDamage + wsResult.damage) / timeToWs
 
-        this.quicklookResults = {
+        const result: SetResults = {
           wsDamage: wsResult.damage,
           tpRoundDamage: avgTpRoundDmg,
           timePerWs: timeToWs,
           dps,
           wsDmgBreakdown: {},
         }
+
+        if (pair === 1) {
+          this.set1Results = result
+          this.players.tp1 = tpPlayer
+          this.players.ws1 = wsPlayer
+        } else {
+          this.set2Results = result
+          this.players.tp2 = tpPlayer
+          this.players.ws2 = wsPlayer
+        }
       } catch (e) {
-        console.error('Quicklook failed:', e)
+        console.error(`runPair(${pair}) failed:`, e)
       }
     },
-
   },
 })

@@ -7,9 +7,9 @@ import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
 import TabPanels from 'primevue/tabpanels'
 import TabPanel from 'primevue/tabpanel'
-import InputsTab from '@/components/tabs/InputsTab.vue'
-import SimulationsTab from '@/components/tabs/SimulationsTab.vue'
-import PlayerStatsTab from '@/components/tabs/PlayerStatsTab.vue'
+import JobEnemyTab from '@/components/tabs/JobEnemyTab.vue'
+import BuffsTab from '@/components/tabs/BuffsTab.vue'
+import ResultsTab from '@/components/tabs/ResultsTab.vue'
 import AutomatonTab from '@/components/tabs/AutomatonTab.vue'
 
 const gearStore = useGearStore()
@@ -27,15 +27,15 @@ onMounted(async () => {
     </div>
     <Tabs value="0" class="app-tabs">
       <TabList>
-        <Tab value="0">Inputs / Quicklook</Tab>
-        <Tab value="1">Simulations</Tab>
-        <Tab value="2">Player Stats</Tab>
+        <Tab value="0">Job &amp; Enemy</Tab>
+        <Tab value="1">Buffs</Tab>
+        <Tab value="2">Results</Tab>
         <Tab v-if="characterStore.mainJob === 'pup'" value="3">Automaton</Tab>
       </TabList>
       <TabPanels>
-        <TabPanel value="0"><InputsTab /></TabPanel>
-        <TabPanel value="1"><SimulationsTab /></TabPanel>
-        <TabPanel value="2"><PlayerStatsTab /></TabPanel>
+        <TabPanel value="0"><JobEnemyTab /></TabPanel>
+        <TabPanel value="1"><BuffsTab /></TabPanel>
+        <TabPanel value="2"><ResultsTab /></TabPanel>
         <TabPanel v-if="characterStore.mainJob === 'pup'" value="3"><AutomatonTab /></TabPanel>
       </TabPanels>
     </Tabs>
@@ -43,19 +43,6 @@ onMounted(async () => {
 </template>
 
 <style>
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #1a1a2e;
-  color: #e0e0e0;
-  min-height: 100vh;
-}
-
 .app-container {
   max-width: 1600px;
   margin: 0 auto;
@@ -71,11 +58,5 @@ body {
 
 .app-tabs {
   width: 100%;
-}
-
-.tab-placeholder {
-  padding: 24px;
-  color: #888;
-  font-style: italic;
 }
 </style>

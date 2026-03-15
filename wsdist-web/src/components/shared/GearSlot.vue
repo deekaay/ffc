@@ -6,7 +6,7 @@ import type { GearItem, GearSlotName } from '@/types/gear'
 import { useGearStore } from '@/stores/useGearStore'
 
 const props = defineProps<{
-  slot: GearSlotName
+  slotName: GearSlotName
   item: GearItem
   jobCode: string
   label?: string
@@ -27,7 +27,7 @@ const iconUrl = computed(() => {
 })
 
 const availableItems = computed(() => {
-  return gearStore.getGearForJob(props.slot, props.jobCode)
+  return gearStore.getGearForJob(props.slotName, props.jobCode)
 })
 
 const filteredItems = computed(() => {
@@ -84,7 +84,7 @@ function pickItem(item: GearItem) {
 
     <Dialog
       v-model:visible="dialogVisible"
-      :header="`${label ?? slot} — ${jobCode.toUpperCase()}`"
+      :header="`${label ?? slotName} — ${jobCode.toUpperCase()}`"
       modal
       :style="{ width: '500px', maxHeight: '80vh' }"
       class="gear-dialog"
@@ -136,21 +136,22 @@ function pickItem(item: GearItem) {
 }
 
 .gear-slot-btn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid #444;
-  background: #1e1e3a;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #2e3f6a;
+  background: #131e38;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 3px;
+  border-radius: 4px;
   padding: 1px;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
 
 .gear-slot-btn:hover {
-  border-color: #6699cc;
+  border-color: #5580cc;
+  background: #1a2a4a;
 }
 
 .gear-icon {
@@ -193,11 +194,11 @@ function pickItem(item: GearItem) {
 }
 
 .gear-item-row:hover {
-  background: #2a2a4a;
+  background: #1e2e50;
 }
 
 .gear-item-row.selected {
-  background: #1a3a5a;
+  background: #1a3660;
 }
 
 .gear-icon-sm {

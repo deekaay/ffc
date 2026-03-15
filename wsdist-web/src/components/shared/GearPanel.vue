@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import GearSlot from './GearSlot.vue'
 import type { Gearset, GearSlotName, GearItem } from '@/types/gear'
+import type { GearContext } from '@/stores/useCharacterStore'
 
 const props = defineProps<{
-  context: 'quicklook' | 'tp' | 'ws'
+  context: GearContext
   gearset: Gearset
   jobCode: string
   title?: string
@@ -13,32 +14,23 @@ const emit = defineEmits<{
   'update:gear': [slot: GearSlotName, item: GearItem]
 }>()
 
-// Slot layout matching the FFXI paperdoll
-const SLOT_LAYOUT: { slot: GearSlotName; label: string }[][] = [
-  [
-    { slot: 'main',   label: 'Main'   },
-    { slot: 'head',   label: 'Head'   },
-    { slot: 'neck',   label: 'Neck'   },
-    { slot: 'ear1',   label: 'Ear 1'  },
-  ],
-  [
-    { slot: 'sub',    label: 'Sub'    },
-    { slot: 'body',   label: 'Body'   },
-    { slot: 'ear2',   label: 'Ear 2'  },
-    { slot: 'hands',  label: 'Hands'  },
-  ],
-  [
-    { slot: 'ranged', label: 'Ranged' },
-    { slot: 'ring1',  label: 'Ring 1' },
-    { slot: 'back',   label: 'Back'   },
-    { slot: 'ring2',  label: 'Ring 2' },
-  ],
-  [
-    { slot: 'ammo',   label: 'Ammo'   },
-    { slot: 'waist',  label: 'Waist'  },
-    { slot: 'legs',   label: 'Legs'   },
-    { slot: 'feet',   label: 'Feet'   },
-  ],
+const SLOT_LAYOUT: { slot: GearSlotName; label: string }[] = [
+  { slot: 'main',   label: 'Main'   },
+  { slot: 'sub',    label: 'Sub'    },
+  { slot: 'ranged', label: 'Ranged' },
+  { slot: 'ammo',   label: 'Ammo'   },
+  { slot: 'head',   label: 'Head'   },
+  { slot: 'neck',   label: 'Neck'   },
+  { slot: 'ear1',   label: 'Ear 1'  },
+  { slot: 'ear2',   label: 'Ear 2'  },
+  { slot: 'body',   label: 'Body'   },
+  { slot: 'hands',  label: 'Hands'  },
+  { slot: 'ring1',  label: 'Ring 1' },
+  { slot: 'ring2',  label: 'Ring 2' },
+  { slot: 'back',   label: 'Back'   },
+  { slot: 'waist',  label: 'Waist'  },
+  { slot: 'legs',   label: 'Legs'   },
+  { slot: 'feet',   label: 'Feet'   },
 ]
 
 function onSelect(slot: GearSlotName, item: GearItem) {
@@ -50,17 +42,15 @@ function onSelect(slot: GearSlotName, item: GearItem) {
   <div class="gear-panel">
     <div v-if="title" class="gear-panel-title">{{ title }}</div>
     <div class="gear-grid">
-      <div v-for="(row, ri) in SLOT_LAYOUT" :key="ri" class="gear-row">
-        <GearSlot
-          v-for="cell in row"
-          :key="cell.slot"
-          :slot="cell.slot"
-          :item="gearset[cell.slot]"
-          :job-code="jobCode"
-          :label="cell.label"
-          @select="(item) => onSelect(cell.slot, item)"
-        />
-      </div>
+      <GearSlot
+        v-for="cell in SLOT_LAYOUT"
+        :key="cell.slot"
+        :slot-name="cell.slot"
+        :item="gearset[cell.slot]"
+        :job-code="jobCode"
+        :label="cell.label"
+        @select="(item) => onSelect(cell.slot, item)"
+      />
     </div>
   </div>
 </template>
@@ -80,13 +70,8 @@ function onSelect(slot: GearSlotName, item: GearItem) {
 }
 
 .gear-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.gear-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, 40px);
   gap: 4px;
 }
 </style>
