@@ -6,7 +6,7 @@ import type { GearItem, GearSlotName } from '@/types/gear'
 import { useGearStore } from '@/stores/useGearStore'
 
 const props = defineProps<{
-  slot: GearSlotName
+  slotName: GearSlotName
   item: GearItem
   jobCode: string
   label?: string
@@ -27,7 +27,7 @@ const iconUrl = computed(() => {
 })
 
 const availableItems = computed(() => {
-  return gearStore.getGearForJob(props.slot, props.jobCode)
+  return gearStore.getGearForJob(props.slotName, props.jobCode)
 })
 
 const filteredItems = computed(() => {
@@ -84,7 +84,7 @@ function pickItem(item: GearItem) {
 
     <Dialog
       v-model:visible="dialogVisible"
-      :header="`${label ?? slot} — ${jobCode.toUpperCase()}`"
+      :header="`${label ?? slotName} — ${jobCode.toUpperCase()}`"
       modal
       :style="{ width: '500px', maxHeight: '80vh' }"
       class="gear-dialog"
