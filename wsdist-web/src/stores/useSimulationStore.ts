@@ -4,6 +4,7 @@ import { buildPlayer, buildEnemy } from '@/calc/createPlayer'
 import { averageAttackRound, averageWs } from '@/calc/actions'
 import { useCharacterStore } from '@/stores/useCharacterStore'
 import type { GearContext } from '@/stores/useCharacterStore'
+import { RANGED_WS } from '@/data/weaponskillsByJob'
 import { useBuffStore } from '@/stores/useBuffStore'
 import { useGearStore } from '@/stores/useGearStore'
 import type { GearItem } from '@/types/gear'
@@ -88,8 +89,10 @@ export const useSimulationStore = defineStore('simulation', {
         const wsPlayer = this.buildCurrentPlayer(wsContext)
         const enemy = this.buildCurrentEnemy()
 
+        const wsType = RANGED_WS.has(charStore.wsName) ? 'ranged' : 'melee'
+
         const tpRound = averageAttackRound(tpPlayer, enemy, charStore.wsThreshold / 2, charStore.wsThreshold, false)
-        const wsResult = averageWs(wsPlayer, enemy, charStore.wsName, charStore.wsThreshold, 'Damage dealt', false)
+        const wsResult = averageWs(wsPlayer, enemy, charStore.wsName, charStore.wsThreshold, wsType, false)
 
         const timePerAttackRound = (tpPlayer.stats['timePerAttackRound'] as number) ?? 3
         const avgTpRoundDmg = tpRound.physicalDamage + tpRound.magicalDamage

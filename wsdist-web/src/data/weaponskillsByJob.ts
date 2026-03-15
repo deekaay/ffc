@@ -60,6 +60,9 @@ const GUN = [
   'Coronach', 'Wildfire', 'Last Stand',
 ]
 
+/** Set of WS names that use ranged (Archery/Marksmanship) mechanics. */
+export const RANGED_WS = new Set([...BOW, ...GUN])
+
 /** All weapon skills available per job. Typed against JobCode for exhaustiveness. */
 export const WS_BY_JOB: Record<JobCode, string[]> = {
   war: [...GREAT_AXE, ...AXE, ...GREAT_SWORD, ...SWORD, ...POLEARM],
