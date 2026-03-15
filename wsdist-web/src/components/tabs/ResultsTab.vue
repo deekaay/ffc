@@ -23,7 +23,8 @@ const players = ref<{ tp1: Player | null; ws1: Player | null; tp2: Player | null
 
 let timer: ReturnType<typeof setTimeout> | null = null
 
-watchEffect(() => {
+watchEffect((onCleanup) => {
+  // Character state
   JSON.stringify(charStore.tpGearset)
   JSON.stringify(charStore.wsGearset)
   JSON.stringify(charStore.tpGearset2)
@@ -32,9 +33,10 @@ watchEffect(() => {
   charStore.mainJob; charStore.subJob; charStore.masterLevel
   charStore.wsName; charStore.wsThreshold
   JSON.stringify(charStore.enemy)
-  JSON.stringify(buffStore.songs); JSON.stringify(buffStore.rolls); JSON.stringify(buffStore.bubbles)
-  buffStore.food; buffStore.soulVoice; buffStore.marcato; buffStore.bolster; buffStore.blazeOfGlory
-  buffStore.shellV; buffStore.hasteSpell; buffStore.diaSpell; buffStore.stormSpell
+  // Buff state — access aggregatedBuffs so all underlying buff fields
+  // are tracked automatically; no need to enumerate them individually
+  buffStore.aggregatedBuffs
+  buffStore.food // food is applied separately in buildCurrentPlayer
 
   if (timer) clearTimeout(timer)
   timer = setTimeout(() => {
@@ -51,6 +53,8 @@ watchEffect(() => {
       console.error('Results build failed:', e)
     }
   }, 300)
+
+  onCleanup(() => { if (timer) clearTimeout(timer) })
 })
 
 function fmt(val: unknown): string {

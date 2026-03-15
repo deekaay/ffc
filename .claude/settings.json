@@ -21,7 +21,8 @@
       "Bash(git commit:*)",
       "Bash(gh pr:*)",
       "Bash(wc -l /srv/ffc/wsdist-web/src/calc/*.ts)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(gh api:*)"
     ],
     "additionalDirectories": [
       "/srv/ffc/wsdist-web/src/components/tabs"
