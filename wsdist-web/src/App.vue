@@ -152,9 +152,13 @@ async function onSaveAndShare() {
 }
 
 async function copyShareUrl() {
-  await navigator.clipboard.writeText(shareUrl.value)
-  copiedToClipboard.value = true
-  setTimeout(() => { copiedToClipboard.value = false }, 1500)
+  try {
+    await navigator.clipboard.writeText(shareUrl.value)
+    copiedToClipboard.value = true
+    setTimeout(() => { copiedToClipboard.value = false }, 1500)
+  } catch {
+    saveError.value = 'Clipboard write failed — please copy the URL manually.'
+  }
 }
 
 // ─── Load state from URL hash on mount ───────────────────────────────────────
@@ -163,6 +167,11 @@ onMounted(async () => {
 
   const hash = window.location.hash.replace(/^#/, '').trim()
   if (!isValidKey(hash)) return
+
+  if (!gearStore.loaded) {
+    loadError.value = 'Gear data failed to load; cannot restore saved state.'
+    return
+  }
 
   try {
     const snap = await fetchAppState(hash)

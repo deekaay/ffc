@@ -2,7 +2,10 @@ import type { GearSlotName, GearItem, Gearset } from '@/types/gear'
 import type { EnemyDef } from '@/types/enemy'
 import type { SongSlot, RollSlot, BubbleSlot } from '@/types/buffs'
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000'
+// Default to same-origin (empty string) so production static deployments use
+// a relative /api path. Set VITE_API_URL only when the API is on a different host
+// (e.g. during local development: http://localhost:3000).
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? ''
 
 const SLOT_ORDER: GearSlotName[] = [
   'main', 'sub', 'ranged', 'ammo',
@@ -104,12 +107,28 @@ export async function saveAppState(state: SavedAppState): Promise<string> {
   return data.key as string
 }
 
+function isValidShape(s: unknown): s is SavedAppState {
+  if (!s || typeof s !== 'object') return false
+  const snap = s as Record<string, unknown>
+  if (snap['v'] !== 1) return false
+  const c = snap['character']
+  const b = snap['buffs']
+  if (!c || typeof c !== 'object') return false
+  if (!b || typeof b !== 'object') return false
+  const ch = c as Record<string, unknown>
+  for (const key of ['tp1', 'ws1', 'tp2', 'ws2']) {
+    if (!ch[key] || typeof ch[key] !== 'object') return false
+  }
+  return true
+}
+
 export async function fetchAppState(key: string): Promise<SavedAppState | null> {
   const res = await fetch(`${API_BASE}/api/app-state/${encodeURIComponent(key)}`)
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`Load failed: ${res.status}`)
   const data = await res.json()
-  return data.state as SavedAppState
+  if (!isValidShape(data.state)) throw new Error('Saved state has an unrecognised format')
+  return data.state
 }
 
 // ---------------------------------------------------------------------------
