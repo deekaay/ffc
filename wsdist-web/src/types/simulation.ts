@@ -3,5 +3,7 @@ export interface SetResults {
   tpRoundDamage: number
   timePerWs: number
   dps: number
+  autoAttackDps: number
+  wsDps: number
   wsDmgBreakdown: Record<string, number>
 }

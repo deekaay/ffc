@@ -116,6 +116,8 @@ export const useSimulationStore = defineStore('simulation', {
           tpRoundDamage: avgTpRoundDmg,
           timePerWs: timeToWs,
           dps,
+          autoAttackDps: tpPhaseDamage / timeToWs,
+          wsDps: wsResult.damage / timeToWs,
           wsDmgBreakdown: {},
         }
 
