@@ -4,6 +4,7 @@ import GearPanel from '@/components/shared/GearPanel.vue'
 import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useCharacterStore } from '@/stores/useCharacterStore'
 import { useBuffStore } from '@/stores/useBuffStore'
+import { useGearStore } from '@/stores/useGearStore'
 import type { Player } from '@/types/player'
 import type { GearSlotName, GearItem } from '@/types/gear'
 import type { GearContext } from '@/stores/useCharacterStore'
@@ -11,6 +12,7 @@ import type { GearContext } from '@/stores/useCharacterStore'
 const simStore = useSimulationStore()
 const charStore = useCharacterStore()
 const buffStore = useBuffStore()
+const gearStore = useGearStore()
 
 function onGearUpdate(context: GearContext, slot: GearSlotName, item: GearItem) {
   charStore.setGear(context, slot, item)
@@ -37,6 +39,8 @@ watchEffect((onCleanup) => {
   // are tracked automatically; no need to enumerate them individually
   buffStore.aggregatedBuffs
   buffStore.food // food is applied separately in buildCurrentPlayer
+  // Re-run once gear data finishes loading so food stats appear correctly
+  gearStore.loaded
 
   if (timer) clearTimeout(timer)
   timer = setTimeout(() => {

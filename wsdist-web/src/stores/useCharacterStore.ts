@@ -2,6 +2,12 @@ import { defineStore } from 'pinia'
 import type { Gearset, GearItem, GearSlotName } from '@/types/gear'
 import type { EnemyDef } from '@/types/enemy'
 
+export type JobCode =
+  | 'war' | 'mnk' | 'whm' | 'blm' | 'rdm' | 'thf'
+  | 'pld' | 'drk' | 'bst' | 'brd' | 'rng' | 'sam'
+  | 'nin' | 'drg' | 'smn' | 'blu' | 'cor' | 'pup'
+  | 'dnc' | 'sch' | 'geo' | 'run'
+
 export const JOBS_DICT: Record<string, string> = {
   'Ninja': 'nin', 'Dark Knight': 'drk', 'Scholar': 'sch', 'Red Mage': 'rdm',
   'Black Mage': 'blm', 'Samurai': 'sam', 'Dragoon': 'drg', 'White Mage': 'whm',

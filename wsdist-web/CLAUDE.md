@@ -4,7 +4,7 @@ This file is for AI agents and developers picking up work on this codebase. Read
 
 ## What this is
 
-`wsdist-web` is a TypeScript/Vue 3 SPA port of `wsdist_beta`, a Python/Tkinter FFXI damage simulator. The Python source lives at `/srv/ffc/wsdist_beta/` and is the authoritative reference for all calculation logic. The web port is in `/srv/ffc/wsdist-web/`.
+`wsdist-web` is a TypeScript/Vue 3 SPA port of `wsdist_beta`, a Python/Tkinter FFXI damage simulator. The Python source (`wsdist_beta/`) lives in the same repository root and is the authoritative reference for all calculation logic. Both projects share the same repo; on a typical local checkout they sit at `../wsdist_beta/` relative to this directory.
 
 ## How the app works (big picture)
 
@@ -59,7 +59,7 @@ Vue 3 intercepts `:slot` as the dynamic named-slot directive (legacy Vue 2 synta
 
 ## Where to look in the Python source
 
-When a calc module produces wrong numbers, the Python reference is in `/srv/ffc/wsdist_beta/`:
+When a calc module produces wrong numbers, the Python reference is in `../wsdist_beta/` (repo root, next to `wsdist-web/`):
 
 | TS file | Python source |
 |---|---|
