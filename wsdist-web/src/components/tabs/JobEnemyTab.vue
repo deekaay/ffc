@@ -24,6 +24,31 @@ function abNum(key: string) {
   })
 }
 
+// Returns true when any of the given job codes matches main or sub job
+function visibleFor(...jobs: string[]) {
+  return computed(() =>
+    jobs.includes(characterStore.mainJob) || jobs.includes(characterStore.subJob)
+  )
+}
+
+const showWar = visibleFor('war')
+const showMnk = visibleFor('mnk')
+const showDrk = visibleFor('drk')
+const showSam = visibleFor('sam')
+const showThf = visibleFor('thf')
+const showDnc = visibleFor('dnc')
+const showRng = visibleFor('rng')
+const showCor = visibleFor('cor')
+const showNin = visibleFor('nin')
+const showRdm = visibleFor('rdm')
+const showPld = visibleFor('pld')
+const showRun = visibleFor('run')
+const showSch = visibleFor('sch')
+const showGeo = visibleFor('geo')
+const showBst = visibleFor('bst')
+const showBlm = visibleFor('blm')
+const showSmn = visibleFor('smn')
+
 // WAR
 const berserk          = abBool('Berserk')
 const aggressor        = abBool('Aggressor')
@@ -140,7 +165,7 @@ const stormModel = computed({
         <div class="abilities-panel">
           <div class="section-title">Abilities</div>
 
-          <div class="ability-group">
+          <div v-if="showWar" class="ability-group">
             <div class="group-label">WAR</div>
             <label><input type="checkbox" v-model="berserk" /> Berserk</label>
             <label><input type="checkbox" v-model="aggressor" /> Aggressor</label>
@@ -150,32 +175,32 @@ const stormModel = computed({
             <label><input type="checkbox" v-model="warcrySub" /> Warcry (sub)</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showMnk" class="ability-group">
             <div class="group-label">MNK</div>
             <label><input type="checkbox" v-model="focus" /> Focus</label>
             <label><input type="checkbox" v-model="footwork" /> Footwork</label>
             <label><input type="checkbox" v-model="impetus" /> Impetus</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showDrk" class="ability-group">
             <div class="group-label">DRK</div>
             <label><input type="checkbox" v-model="lastResort" /> Last Resort</label>
             <label><input type="checkbox" v-model="endark2" /> Endark II</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showSam" class="ability-group">
             <div class="group-label">SAM</div>
             <label><input type="checkbox" v-model="hasso" /> Hasso</label>
             <label><input type="checkbox" v-model="overwhelm" /> Overwhelm</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showThf" class="ability-group">
             <div class="group-label">THF</div>
             <label><input type="checkbox" v-model="sneakAttack" /> Sneak Attack</label>
             <label><input type="checkbox" v-model="trickAttack" /> Trick Attack</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showDnc" class="ability-group">
             <div class="group-label">DNC</div>
             <label><input type="checkbox" v-model="buildingFlourish" /> Building Flourish</label>
             <label><input type="checkbox" v-model="saberDance" /> Saber Dance</label>
@@ -183,7 +208,7 @@ const stormModel = computed({
             <label><input type="checkbox" v-model="hasteSambaSub" /> Haste Samba (sub)</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showRng" class="ability-group">
             <div class="group-label">RNG</div>
             <label><input type="checkbox" v-model="velocityShot" /> Velocity Shot</label>
             <label><input type="checkbox" v-model="doubleShot" /> Double Shot</label>
@@ -193,21 +218,21 @@ const stormModel = computed({
             <label><input type="checkbox" v-model="trueShot" /> True Shot</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showCor" class="ability-group">
             <div class="group-label">COR</div>
             <label><input type="checkbox" v-model="tripleShot" /> Triple Shot</label>
             <label><input type="checkbox" v-model="conspirator" /> Conspirator</label>
             <label><input type="checkbox" v-model="trueShot" /> True Shot</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showNin" class="ability-group">
             <div class="group-label">NIN</div>
             <label><input type="checkbox" v-model="innin" /> Innin</label>
             <label><input type="checkbox" v-model="futae" /> Futae</label>
             <label><input type="checkbox" v-model="sange" /> Sange</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showRdm" class="ability-group">
             <div class="group-label">RDM</div>
             <label><input type="checkbox" v-model="enspell" /> EnSpell</label>
             <label><input type="checkbox" v-model="composure" /> Composure</label>
@@ -215,43 +240,43 @@ const stormModel = computed({
             <label><input type="checkbox" v-model="chainspell" /> Chainspell</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showPld" class="ability-group">
             <div class="group-label">PLD</div>
             <label><input type="checkbox" v-model="enlight2" /> Enlight II</label>
             <label><input type="checkbox" v-model="divineEmblem" /> Divine Emblem</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showRun" class="ability-group">
             <div class="group-label">RUN</div>
             <label><input type="checkbox" v-model="temper" /> Temper</label>
             <label><input type="checkbox" v-model="swordplay" /> Swordplay</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showSch" class="ability-group">
             <div class="group-label">SCH</div>
             <label><input type="checkbox" v-model="ebullience" /> Ebullience</label>
             <label><input type="checkbox" v-model="enlightenment" /> Enlightenment</label>
             <label><input type="checkbox" v-model="klimaform" /> Klimaform</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showGeo" class="ability-group">
             <div class="group-label">GEO</div>
             <label><input type="checkbox" v-model="theurgicFocus" /> Theurgic Focus</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showBst" class="ability-group">
             <div class="group-label">BST</div>
             <label><input type="checkbox" v-model="rage" /> Rage</label>
             <label><input type="checkbox" v-model="frenziedRage" /> Frenzied Rage</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showBlm" class="ability-group">
             <div class="group-label">BLM</div>
             <label><input type="checkbox" v-model="manafont" /> Manafont</label>
             <label><input type="checkbox" v-model="manawell" /> Manawell</label>
           </div>
 
-          <div class="ability-group">
+          <div v-if="showSmn" class="ability-group">
             <div class="group-label">SMN</div>
             <label><input type="checkbox" v-model="ifritsFavor" /> Ifrit's Favor</label>
             <label><input type="checkbox" v-model="shivasFavor" /> Shiva's Favor</label>
