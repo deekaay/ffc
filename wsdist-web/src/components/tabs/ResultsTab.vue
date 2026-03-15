@@ -6,7 +6,7 @@ import { useCharacterStore } from '@/stores/useCharacterStore'
 import { useBuffStore } from '@/stores/useBuffStore'
 import { useGearStore } from '@/stores/useGearStore'
 import type { Player } from '@/types/player'
-import type { GearSlotName, GearItem } from '@/types/gear'
+import type { GearSlotName, GearItem, Gearset } from '@/types/gear'
 import type { GearContext } from '@/stores/useCharacterStore'
 
 const simStore = useSimulationStore()
@@ -16,6 +16,10 @@ const gearStore = useGearStore()
 
 function onGearUpdate(context: GearContext, slot: GearSlotName, item: GearItem) {
   charStore.setGear(context, slot, item)
+}
+
+function onGearsetImport(context: GearContext, gs: Gearset) {
+  charStore.replaceGearset(context, gs)
 }
 
 let timer: ReturnType<typeof setTimeout> | null = null
@@ -171,6 +175,7 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
             :job-code="charStore.mainJob"
             title="TP Set"
             @update:gear="(slot, item) => onGearUpdate('tp1', slot, item)"
+            @import:gearset="(gs) => onGearsetImport('tp1', gs)"
           />
           <GearPanel
             context="ws1"
@@ -178,6 +183,7 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
             :job-code="charStore.mainJob"
             title="WS Set"
             @update:gear="(slot, item) => onGearUpdate('ws1', slot, item)"
+            @import:gearset="(gs) => onGearsetImport('ws1', gs)"
           />
         </div>
       </div>
@@ -192,6 +198,7 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
             :job-code="charStore.mainJob"
             title="TP Set"
             @update:gear="(slot, item) => onGearUpdate('tp2', slot, item)"
+            @import:gearset="(gs) => onGearsetImport('tp2', gs)"
           />
           <GearPanel
             context="ws2"
@@ -199,6 +206,7 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
             :job-code="charStore.mainJob"
             title="WS Set"
             @update:gear="(slot, item) => onGearUpdate('ws2', slot, item)"
+            @import:gearset="(gs) => onGearsetImport('ws2', gs)"
           />
         </div>
       </div>
