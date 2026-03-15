@@ -93,6 +93,12 @@ export const useCharacterStore = defineStore('character', {
                : this.wsGearset2
       gs[slot] = item
     },
+    replaceGearset(context: GearContext, gs: Gearset) {
+      const dst =
+        context === 'tp1' ? this.tpGearset  : context === 'ws1' ? this.wsGearset :
+        context === 'tp2' ? this.tpGearset2 : this.wsGearset2
+      for (const slot in gs) dst[slot as GearSlotName] = { ...gs[slot as GearSlotName] }
+    },
     copyGearset(from: GearContext, to: GearContext) {
       const pick = (c: GearContext) =>
         c === 'tp1' ? this.tpGearset  : c === 'ws1' ? this.wsGearset :
