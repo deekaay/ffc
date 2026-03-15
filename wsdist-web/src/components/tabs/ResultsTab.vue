@@ -220,6 +220,14 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
             <span class="metric-label">Time/WS (s)</span>
             <span class="metric-value">{{ fmt1(simStore.set1Results?.timePerWs) }}</span>
           </div>
+          <div class="metric-row">
+            <span class="metric-label">Auto-attack DPS</span>
+            <span class="metric-value">{{ fmt1(simStore.set1Results?.autoAttackDps) }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">WS DPS</span>
+            <span class="metric-value">{{ fmt1(simStore.set1Results?.wsDps) }}</span>
+          </div>
           <div class="metric-row dps-row">
             <span class="metric-label">DPS</span>
             <span class="metric-value dps-value">{{ fmt1(simStore.set1Results?.dps) }}</span>
@@ -240,6 +248,14 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
           <div class="metric-row">
             <span class="metric-label">Time/WS (s)</span>
             <span class="metric-value">{{ fmt1(simStore.set2Results?.timePerWs) }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Auto-attack DPS</span>
+            <span class="metric-value">{{ fmt1(simStore.set2Results?.autoAttackDps) }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">WS DPS</span>
+            <span class="metric-value">{{ fmt1(simStore.set2Results?.wsDps) }}</span>
           </div>
           <div class="metric-row dps-row">
             <span class="metric-label">DPS</span>
