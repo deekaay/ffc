@@ -114,45 +114,45 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
   {
     label: 'Multi-Attack',
     rows: [
-      { label: 'DA %',            key: 'DA',         format: pct },
-      { label: 'TA %',            key: 'TA',         format: pct },
-      { label: 'QA %',            key: 'QA',         format: pct },
-      { label: 'OA2 (Main)',      key: 'OA2 main',   format: pct },
-      { label: 'OA3 (Main)',      key: 'OA3 main',   format: pct },
-      { label: 'OA2 (Sub)',       key: 'OA2 sub',    format: pct },
-      { label: 'OA3 (Sub)',       key: 'OA3 sub',    format: pct },
-      { label: 'Daken %',         key: 'Daken',      format: pct },
+      { label: 'DA %',            key: 'DA',           format: pct },
+      { label: 'TA %',            key: 'TA',           format: pct },
+      { label: 'QA %',            key: 'QA',           format: pct },
+      { label: 'OA2 (Main)',      key: 'OA2 main',     format: pct },
+      { label: 'OA3 (Main)',      key: 'OA3 main',     format: pct },
+      { label: 'OA2 (Sub)',       key: 'OA2 sub',      format: pct },
+      { label: 'OA3 (Sub)',       key: 'OA3 sub',      format: pct },
+      { label: 'Daken %',         key: 'Daken',        format: pct },
       { label: 'Kick Attacks %',  key: 'Kick Attacks', format: pct },
-      { label: 'Zanshin %',       key: 'Zanshin',    format: pct },
+      { label: 'Zanshin %',       key: 'Zanshin',      format: pct },
     ],
   },
   {
     label: 'Critical',
     rows: [
-      { label: 'Crit Rate',       key: 'Crit Rate',   format: pct },
-      { label: 'Crit Damage',     key: 'Crit Damage', format: pct },
+      { label: 'Crit Rate',   key: 'Crit Rate',   format: pct },
+      { label: 'Crit Damage', key: 'Crit Damage', format: pct },
     ],
   },
   {
     label: 'Haste',
     rows: [
-      { label: 'Gear Haste',      key: 'Gear Haste',  format: pct },
-      { label: 'JA Haste',        key: 'JA Haste',    format: pct },
-      { label: 'Magic Haste',     key: 'Magic Haste', format: pct },
+      { label: 'Gear Haste',  key: 'Gear Haste',  format: pct },
+      { label: 'JA Haste',    key: 'JA Haste',    format: pct },
+      { label: 'Magic Haste', key: 'Magic Haste', format: pct },
     ],
   },
   {
     label: 'WS & Misc',
     rows: [
-      { label: 'Store TP',         key: 'Store TP' },
-      { label: 'TP Bonus',         key: 'TP Bonus' },
-      { label: 'WS Damage %',      key: 'Weapon Skill Damage' },
-      { label: 'PDL (Gear)',        key: 'PDL' },
-      { label: 'PDL (Trait)',       key: 'PDL Trait' },
-      { label: 'Subtle Blow',       key: 'Subtle Blow' },
-      { label: 'Skillchain Bonus',  key: 'Skillchain Bonus' },
-      { label: 'Magic Burst Dmg',   key: 'Magic Burst Damage Trait' },
-      { label: 'Dual Wield',        key: 'Dual Wield' },
+      { label: 'Store TP',        key: 'Store TP' },
+      { label: 'TP Bonus',        key: 'TP Bonus' },
+      { label: 'WS Damage %',     key: 'Weapon Skill Damage' },
+      { label: 'PDL (Gear)',       key: 'PDL' },
+      { label: 'PDL (Trait)',      key: 'PDL Trait' },
+      { label: 'Subtle Blow',      key: 'Subtle Blow' },
+      { label: 'SC Bonus',         key: 'Skillchain Bonus' },
+      { label: 'MB Damage',        key: 'Magic Burst Damage Trait' },
+      { label: 'Dual Wield',       key: 'Dual Wield' },
     ],
   },
 ]
@@ -161,13 +161,13 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
 <template>
   <div class="results-tab">
 
-    <!-- Two set pairs side by side -->
-    <div class="pairs-row">
+    <!-- Top row: Set 1 | Set 2 | Results -->
+    <div class="top-row">
 
       <!-- Set 1 -->
-      <div class="set-block">
-        <div class="set-label">Set 1</div>
-        <div class="set-panels">
+      <div class="set-panel">
+        <div class="set-panel-header">Set 1</div>
+        <div class="set-grids">
           <GearPanel
             context="tp1"
             :gearset="charStore.tpGearset"
@@ -183,30 +183,12 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
             @update:gear="(slot, item) => onGearUpdate('ws1', slot, item)"
           />
         </div>
-        <div class="dps-results">
-          <div class="result-card">
-            <div class="result-label">WS Damage</div>
-            <div class="result-value">{{ fmt0(simStore.set1Results?.wsDamage) }}</div>
-          </div>
-          <div class="result-card">
-            <div class="result-label">TP Round Dmg</div>
-            <div class="result-value">{{ fmt0(simStore.set1Results?.tpRoundDamage) }}</div>
-          </div>
-          <div class="result-card">
-            <div class="result-label">Time/WS (s)</div>
-            <div class="result-value">{{ fmt1(simStore.set1Results?.timePerWs) }}</div>
-          </div>
-          <div class="result-card highlight">
-            <div class="result-label">DPS</div>
-            <div class="result-value">{{ fmt1(simStore.set1Results?.dps) }}</div>
-          </div>
-        </div>
       </div>
 
       <!-- Set 2 -->
-      <div class="set-block">
-        <div class="set-label">Set 2</div>
-        <div class="set-panels">
+      <div class="set-panel">
+        <div class="set-panel-header">Set 2</div>
+        <div class="set-grids">
           <GearPanel
             context="tp2"
             :gearset="charStore.tpGearset2"
@@ -222,22 +204,49 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
             @update:gear="(slot, item) => onGearUpdate('ws2', slot, item)"
           />
         </div>
-        <div class="dps-results">
-          <div class="result-card">
-            <div class="result-label">WS Damage</div>
-            <div class="result-value">{{ fmt0(simStore.set2Results?.wsDamage) }}</div>
+      </div>
+
+      <!-- Results column -->
+      <div class="results-column">
+        <!-- Set 1 results -->
+        <div class="dps-card">
+          <div class="dps-card-title">Set 1</div>
+          <div class="metric-row">
+            <span class="metric-label">WS Damage</span>
+            <span class="metric-value">{{ fmt0(simStore.set1Results?.wsDamage) }}</span>
           </div>
-          <div class="result-card">
-            <div class="result-label">TP Round Dmg</div>
-            <div class="result-value">{{ fmt0(simStore.set2Results?.tpRoundDamage) }}</div>
+          <div class="metric-row">
+            <span class="metric-label">TP Round</span>
+            <span class="metric-value">{{ fmt0(simStore.set1Results?.tpRoundDamage) }}</span>
           </div>
-          <div class="result-card">
-            <div class="result-label">Time/WS (s)</div>
-            <div class="result-value">{{ fmt1(simStore.set2Results?.timePerWs) }}</div>
+          <div class="metric-row">
+            <span class="metric-label">Time/WS (s)</span>
+            <span class="metric-value">{{ fmt1(simStore.set1Results?.timePerWs) }}</span>
           </div>
-          <div class="result-card highlight">
-            <div class="result-label">DPS</div>
-            <div class="result-value">{{ fmt1(simStore.set2Results?.dps) }}</div>
+          <div class="metric-row dps-row">
+            <span class="metric-label">DPS</span>
+            <span class="metric-value dps-value">{{ fmt1(simStore.set1Results?.dps) }}</span>
+          </div>
+        </div>
+
+        <!-- Set 2 results -->
+        <div class="dps-card">
+          <div class="dps-card-title">Set 2</div>
+          <div class="metric-row">
+            <span class="metric-label">WS Damage</span>
+            <span class="metric-value">{{ fmt0(simStore.set2Results?.wsDamage) }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">TP Round</span>
+            <span class="metric-value">{{ fmt0(simStore.set2Results?.tpRoundDamage) }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Time/WS (s)</span>
+            <span class="metric-value">{{ fmt1(simStore.set2Results?.timePerWs) }}</span>
+          </div>
+          <div class="metric-row dps-row">
+            <span class="metric-label">DPS</span>
+            <span class="metric-value dps-value">{{ fmt1(simStore.set2Results?.dps) }}</span>
           </div>
         </div>
       </div>
@@ -280,74 +289,106 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
 .results-tab {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   padding: 10px;
   color: #e0e0e0;
 }
 
-.pairs-row {
+/* ── Top row layout ───────────────────────────────── */
+.top-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
   align-items: flex-start;
 }
 
-.set-block {
+/* ── Set panels ───────────────────────────────────── */
+.set-panel {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 10px 12px 12px;
+  background: #0f1a2e;
+  border: 1px solid #2e3f6a;
+  border-radius: 6px;
 }
 
-.set-label {
-  font-size: 0.78rem;
+.set-panel-header {
+  font-size: 0.72rem;
   font-weight: 700;
   color: #a0c4ff;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
 }
 
-.set-panels {
+.set-grids {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: flex-start;
 }
 
-.dps-results {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.result-card {
+/* ── Results column ───────────────────────────────── */
+.results-column {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 5px 12px;
-  background: #16213e;
-  border: 1px solid #2a3a6a;
-  border-radius: 4px;
-  min-width: 80px;
+  gap: 10px;
+  align-self: flex-start;
 }
 
-.result-card.highlight {
-  border-color: #4a6aaa;
-  background: #1a2a4e;
+.dps-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  background: #0f1a2e;
+  border: 1px solid #2e3f6a;
+  border-radius: 6px;
+  min-width: 160px;
 }
 
-.result-label {
-  font-size: 0.65rem;
-  color: #8888aa;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.result-value {
-  font-size: 1.1rem;
+.dps-card-title {
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #a0e0ff;
-  margin-top: 2px;
+  color: #a0c4ff;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #2e3f6a;
+  padding-bottom: 4px;
 }
 
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.metric-label {
+  font-size: 0.72rem;
+  color: #8899bb;
+}
+
+.metric-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #c8e0ff;
+  font-family: 'Courier New', monospace;
+}
+
+.dps-row {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #2e3f6a;
+}
+
+.dps-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #7dd8ff;
+}
+
+/* ── Stats table ──────────────────────────────────── */
 .stats-wrapper {
   overflow-x: auto;
 }
@@ -356,41 +397,57 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
   border-collapse: collapse;
   font-size: 0.82rem;
   width: 100%;
-  max-width: 860px;
+  max-width: 820px;
 }
 
 .stats-table th {
-  padding: 6px 10px;
-  background: #16213e;
-  color: #a0c4ff;
+  padding: 7px 12px;
+  background: #1a2a50;
+  color: #c8dcff;
   text-align: center;
-  font-weight: 600;
+  font-weight: 700;
   position: sticky;
   top: 0;
   z-index: 1;
+  border-bottom: 2px solid #3a4e80;
 }
 
-.col-stat { text-align: left !important; min-width: 160px; }
+.col-stat { text-align: left !important; min-width: 150px; }
 .col-val  { min-width: 90px; }
 
 .group-header td {
-  padding: 8px 10px 4px;
-  color: #6699cc;
+  padding: 10px 12px 4px;
+  color: #90b8ff;
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: #111126;
-  border-top: 1px solid #333;
+  letter-spacing: 0.06em;
+  background: #0c1428;
+  border-top: 1px solid #2e3f6a;
 }
 
-tr:nth-child(even):not(.group-header) { background: #13132a; }
+tbody tr:not(.group-header) {
+  background: #111c35;
+}
 
-.stat-label { padding: 3px 10px; color: #ccc; }
+tbody tr:not(.group-header):nth-child(even) {
+  background: #0d1628;
+}
+
+tbody tr:not(.group-header):hover {
+  background: #1a2a4a;
+}
+
+.stat-label {
+  padding: 4px 12px;
+  color: #d0d8f0;
+  font-weight: 500;
+}
+
 .stat-val {
-  padding: 3px 10px;
+  padding: 4px 12px;
   text-align: center;
-  color: #e0e0e0;
+  color: #ffffff;
   font-family: 'Courier New', monospace;
 }
 </style>
