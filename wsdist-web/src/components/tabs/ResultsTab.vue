@@ -57,9 +57,17 @@ function fmt(val: unknown): string {
   return String(val)
 }
 
+// For stats stored as decimals (0.0–1.0): Gear/JA/Magic Haste, Delay Reduction
 function pct(val: unknown): string {
   if (typeof val !== 'number') return '—'
   return (val * 100).toFixed(1) + '%'
+}
+
+// For stats stored as integer percent (e.g. DA=10 means 10%):
+// DA, TA, QA, OA2/OA3, Daken, Kick Attacks, Zanshin, Crit Rate, Crit Damage
+function pctI(val: unknown): string {
+  if (typeof val !== 'number') return '—'
+  return (Number.isInteger(val) ? String(val) : val.toFixed(1)) + '%'
 }
 
 function getVal(player: Player | null, key: string): unknown {
@@ -111,23 +119,23 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
   {
     label: 'Multi-Attack',
     rows: [
-      { label: 'DA %',            key: 'DA',           format: pct },
-      { label: 'TA %',            key: 'TA',           format: pct },
-      { label: 'QA %',            key: 'QA',           format: pct },
-      { label: 'OA2 (Main)',      key: 'OA2 main',     format: pct },
-      { label: 'OA3 (Main)',      key: 'OA3 main',     format: pct },
-      { label: 'OA2 (Sub)',       key: 'OA2 sub',      format: pct },
-      { label: 'OA3 (Sub)',       key: 'OA3 sub',      format: pct },
-      { label: 'Daken %',         key: 'Daken',        format: pct },
-      { label: 'Kick Attacks %',  key: 'Kick Attacks', format: pct },
-      { label: 'Zanshin %',       key: 'Zanshin',      format: pct },
+      { label: 'DA %',            key: 'DA',           format: pctI },
+      { label: 'TA %',            key: 'TA',           format: pctI },
+      { label: 'QA %',            key: 'QA',           format: pctI },
+      { label: 'OA2 (Main)',      key: 'OA2 main',     format: pctI },
+      { label: 'OA3 (Main)',      key: 'OA3 main',     format: pctI },
+      { label: 'OA2 (Sub)',       key: 'OA2 sub',      format: pctI },
+      { label: 'OA3 (Sub)',       key: 'OA3 sub',      format: pctI },
+      { label: 'Daken %',         key: 'Daken',        format: pctI },
+      { label: 'Kick Attacks %',  key: 'Kick Attacks', format: pctI },
+      { label: 'Zanshin %',       key: 'Zanshin',      format: pctI },
     ],
   },
   {
     label: 'Critical',
     rows: [
-      { label: 'Crit Rate',   key: 'Crit Rate',   format: pct },
-      { label: 'Crit Damage', key: 'Crit Damage', format: pct },
+      { label: 'Crit Rate',   key: 'Crit Rate',   format: pctI },
+      { label: 'Crit Damage', key: 'Crit Damage', format: pctI },
     ],
   },
   {
