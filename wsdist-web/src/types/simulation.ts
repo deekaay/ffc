@@ -1,4 +1,4 @@
-export interface QuicklookResults {
+export interface SetResults {
   wsDamage: number
   tpRoundDamage: number
   timePerWs: number

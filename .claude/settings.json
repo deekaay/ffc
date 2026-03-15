@@ -16,7 +16,12 @@
       "Bash(bash -l -c \"grep -c ''averageWs\\\\|buildPlayer\\\\|getWeaponskillInfo'' /srv/ffc/wsdist-web/dist/assets/index-DCb4DBbV.js\")",
       "Bash(bash -l -c \"npx vite preview --port 4173 &\")",
       "Bash(curl -s http://localhost:4173/)",
-      "Bash(pkill -f \"vite preview\")"
+      "Bash(pkill -f \"vite preview\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh pr:*)",
+      "Bash(wc -l /srv/ffc/wsdist-web/src/calc/*.ts)",
+      "Bash(git push:*)"
     ],
     "additionalDirectories": [
       "/srv/ffc/wsdist-web/src/components/tabs"

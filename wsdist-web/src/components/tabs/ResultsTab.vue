@@ -1,36 +1,37 @@
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
 import GearPanel from '@/components/shared/GearPanel.vue'
-import QuicklookResults from '@/components/shared/QuicklookResults.vue'
 import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useCharacterStore } from '@/stores/useCharacterStore'
 import { useBuffStore } from '@/stores/useBuffStore'
 import type { Player } from '@/types/player'
 import type { GearSlotName, GearItem } from '@/types/gear'
+import type { GearContext } from '@/stores/useCharacterStore'
 
 const simStore = useSimulationStore()
 const charStore = useCharacterStore()
 const buffStore = useBuffStore()
 
-function onGearUpdate(context: 'quicklook' | 'tp' | 'ws', slot: GearSlotName, item: GearItem) {
+function onGearUpdate(context: GearContext, slot: GearSlotName, item: GearItem) {
   charStore.setGear(context, slot, item)
 }
 
 // ── Player stats ──────────────────────────────────────────────────────────────
-const players = ref<{ quicklook: Player | null; tp: Player | null; ws: Player | null }>({
-  quicklook: null, tp: null, ws: null,
+const players = ref<{ tp1: Player | null; ws1: Player | null; tp2: Player | null; ws2: Player | null }>({
+  tp1: null, ws1: null, tp2: null, ws2: null,
 })
 
 let timer: ReturnType<typeof setTimeout> | null = null
 
 watchEffect(() => {
-  JSON.stringify(charStore.quicklookGearset)
   JSON.stringify(charStore.tpGearset)
   JSON.stringify(charStore.wsGearset)
+  JSON.stringify(charStore.tpGearset2)
+  JSON.stringify(charStore.wsGearset2)
   JSON.stringify(charStore.abilities)
   charStore.mainJob; charStore.subJob; charStore.masterLevel
+  charStore.wsName; charStore.wsThreshold
   JSON.stringify(charStore.enemy)
-  buffStore.brdEnabled; buffStore.corEnabled; buffStore.geoEnabled; buffStore.whmEnabled
   JSON.stringify(buffStore.songs); JSON.stringify(buffStore.rolls); JSON.stringify(buffStore.bubbles)
   buffStore.food; buffStore.soulVoice; buffStore.marcato; buffStore.bolster; buffStore.blazeOfGlory
   buffStore.shellV; buffStore.hasteSpell; buffStore.diaSpell; buffStore.stormSpell
@@ -39,12 +40,15 @@ watchEffect(() => {
   timer = setTimeout(() => {
     try {
       players.value = {
-        quicklook: simStore.buildCurrentPlayer('quicklook'),
-        tp: simStore.buildCurrentPlayer('tp'),
-        ws: simStore.buildCurrentPlayer('ws'),
+        tp1: simStore.buildCurrentPlayer('tp1'),
+        ws1: simStore.buildCurrentPlayer('ws1'),
+        tp2: simStore.buildCurrentPlayer('tp2'),
+        ws2: simStore.buildCurrentPlayer('ws2'),
       }
+      simStore.runPair(1)
+      simStore.runPair(2)
     } catch (e) {
-      console.error('PlayerStats build failed:', e)
+      console.error('Results build failed:', e)
     }
   }, 300)
 })
@@ -63,6 +67,16 @@ function pct(val: unknown): string {
 
 function getVal(player: Player | null, key: string): unknown {
   return player?.stats[key]
+}
+
+function fmt0(v: number | undefined | null): string {
+  if (v == null || isNaN(v)) return '—'
+  return Math.round(v).toLocaleString()
+}
+
+function fmt1(v: number | undefined | null): string {
+  if (v == null || isNaN(v)) return '—'
+  return v.toFixed(1)
 }
 
 const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?: (v: unknown) => string }[] }[] = [
@@ -146,33 +160,89 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
 
 <template>
   <div class="results-tab">
-    <!-- Gear panels -->
-    <div class="gear-row">
-      <GearPanel
-        context="quicklook"
-        :gearset="charStore.quicklookGearset"
-        :job-code="charStore.mainJob"
-        title="Quicklook Set"
-        @update:gear="(slot, item) => onGearUpdate('quicklook', slot, item)"
-      />
-      <GearPanel
-        context="tp"
-        :gearset="charStore.tpGearset"
-        :job-code="charStore.mainJob"
-        title="TP Set"
-        @update:gear="(slot, item) => onGearUpdate('tp', slot, item)"
-      />
-      <GearPanel
-        context="ws"
-        :gearset="charStore.wsGearset"
-        :job-code="charStore.mainJob"
-        title="WS Set"
-        @update:gear="(slot, item) => onGearUpdate('ws', slot, item)"
-      />
-    </div>
 
-    <!-- DPS results -->
-    <QuicklookResults />
+    <!-- Two set pairs side by side -->
+    <div class="pairs-row">
+
+      <!-- Set 1 -->
+      <div class="set-block">
+        <div class="set-label">Set 1</div>
+        <div class="set-panels">
+          <GearPanel
+            context="tp1"
+            :gearset="charStore.tpGearset"
+            :job-code="charStore.mainJob"
+            title="TP Set"
+            @update:gear="(slot, item) => onGearUpdate('tp1', slot, item)"
+          />
+          <GearPanel
+            context="ws1"
+            :gearset="charStore.wsGearset"
+            :job-code="charStore.mainJob"
+            title="WS Set"
+            @update:gear="(slot, item) => onGearUpdate('ws1', slot, item)"
+          />
+        </div>
+        <div class="dps-results">
+          <div class="result-card">
+            <div class="result-label">WS Damage</div>
+            <div class="result-value">{{ fmt0(simStore.set1Results?.wsDamage) }}</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">TP Round Dmg</div>
+            <div class="result-value">{{ fmt0(simStore.set1Results?.tpRoundDamage) }}</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Time/WS (s)</div>
+            <div class="result-value">{{ fmt1(simStore.set1Results?.timePerWs) }}</div>
+          </div>
+          <div class="result-card highlight">
+            <div class="result-label">DPS</div>
+            <div class="result-value">{{ fmt1(simStore.set1Results?.dps) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Set 2 -->
+      <div class="set-block">
+        <div class="set-label">Set 2</div>
+        <div class="set-panels">
+          <GearPanel
+            context="tp2"
+            :gearset="charStore.tpGearset2"
+            :job-code="charStore.mainJob"
+            title="TP Set"
+            @update:gear="(slot, item) => onGearUpdate('tp2', slot, item)"
+          />
+          <GearPanel
+            context="ws2"
+            :gearset="charStore.wsGearset2"
+            :job-code="charStore.mainJob"
+            title="WS Set"
+            @update:gear="(slot, item) => onGearUpdate('ws2', slot, item)"
+          />
+        </div>
+        <div class="dps-results">
+          <div class="result-card">
+            <div class="result-label">WS Damage</div>
+            <div class="result-value">{{ fmt0(simStore.set2Results?.wsDamage) }}</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">TP Round Dmg</div>
+            <div class="result-value">{{ fmt0(simStore.set2Results?.tpRoundDamage) }}</div>
+          </div>
+          <div class="result-card">
+            <div class="result-label">Time/WS (s)</div>
+            <div class="result-value">{{ fmt1(simStore.set2Results?.timePerWs) }}</div>
+          </div>
+          <div class="result-card highlight">
+            <div class="result-label">DPS</div>
+            <div class="result-value">{{ fmt1(simStore.set2Results?.dps) }}</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
 
     <!-- Stats table -->
     <div class="stats-wrapper">
@@ -180,26 +250,29 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
         <thead>
           <tr>
             <th class="col-stat">Stat</th>
-            <th class="col-val">Quicklook</th>
-            <th class="col-val">TP Set</th>
-            <th class="col-val">WS Set</th>
+            <th class="col-val">TP Set 1</th>
+            <th class="col-val">WS Set 1</th>
+            <th class="col-val">TP Set 2</th>
+            <th class="col-val">WS Set 2</th>
           </tr>
         </thead>
         <tbody>
           <template v-for="group in STAT_GROUPS" :key="group.label">
             <tr class="group-header">
-              <td colspan="4">{{ group.label }}</td>
+              <td colspan="5">{{ group.label }}</td>
             </tr>
             <tr v-for="row in group.rows" :key="row.key">
               <td class="stat-label">{{ row.label }}</td>
-              <td class="stat-val">{{ (row.format ?? fmt)(getVal(players.quicklook, row.key)) }}</td>
-              <td class="stat-val">{{ (row.format ?? fmt)(getVal(players.tp, row.key)) }}</td>
-              <td class="stat-val">{{ (row.format ?? fmt)(getVal(players.ws, row.key)) }}</td>
+              <td class="stat-val">{{ (row.format ?? fmt)(getVal(players.tp1, row.key)) }}</td>
+              <td class="stat-val">{{ (row.format ?? fmt)(getVal(players.ws1, row.key)) }}</td>
+              <td class="stat-val">{{ (row.format ?? fmt)(getVal(players.tp2, row.key)) }}</td>
+              <td class="stat-val">{{ (row.format ?? fmt)(getVal(players.ws2, row.key)) }}</td>
             </tr>
           </template>
         </tbody>
       </table>
     </div>
+
   </div>
 </template>
 
@@ -207,16 +280,72 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
 .results-tab {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   padding: 10px;
   color: #e0e0e0;
 }
 
-.gear-row {
+.pairs-row {
   display: flex;
   flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.set-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.set-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #a0c4ff;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.set-panels {
+  display: flex;
   gap: 8px;
   align-items: flex-start;
+}
+
+.dps-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 12px;
+  background: #16213e;
+  border: 1px solid #2a3a6a;
+  border-radius: 4px;
+  min-width: 80px;
+}
+
+.result-card.highlight {
+  border-color: #4a6aaa;
+  background: #1a2a4e;
+}
+
+.result-label {
+  font-size: 0.65rem;
+  color: #8888aa;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.result-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #a0e0ff;
+  margin-top: 2px;
 }
 
 .stats-wrapper {
@@ -227,11 +356,11 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
   border-collapse: collapse;
   font-size: 0.82rem;
   width: 100%;
-  max-width: 700px;
+  max-width: 860px;
 }
 
 .stats-table th {
-  padding: 6px 12px;
+  padding: 6px 10px;
   background: #16213e;
   color: #a0c4ff;
   text-align: center;
@@ -242,10 +371,10 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
 }
 
 .col-stat { text-align: left !important; min-width: 160px; }
-.col-val  { min-width: 100px; }
+.col-val  { min-width: 90px; }
 
 .group-header td {
-  padding: 8px 12px 4px;
+  padding: 8px 10px 4px;
   color: #6699cc;
   font-weight: 700;
   font-size: 0.75rem;
@@ -257,9 +386,9 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
 
 tr:nth-child(even):not(.group-header) { background: #13132a; }
 
-.stat-label { padding: 3px 12px; color: #ccc; }
+.stat-label { padding: 3px 10px; color: #ccc; }
 .stat-val {
-  padding: 3px 12px;
+  padding: 3px 10px;
   text-align: center;
   color: #e0e0e0;
   font-family: 'Courier New', monospace;

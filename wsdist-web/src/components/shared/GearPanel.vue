@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import GearSlot from './GearSlot.vue'
 import type { Gearset, GearSlotName, GearItem } from '@/types/gear'
+import type { GearContext } from '@/stores/useCharacterStore'
 
 const props = defineProps<{
-  context: 'quicklook' | 'tp' | 'ws'
+  context: GearContext
   gearset: Gearset
   jobCode: string
   title?: string
@@ -17,24 +18,24 @@ const emit = defineEmits<{
 const SLOT_LAYOUT: { slot: GearSlotName; label: string }[][] = [
   [
     { slot: 'main',   label: 'Main'   },
+    { slot: 'sub',    label: 'Sub'    },
+    { slot: 'ranged', label: 'Ranged' },
+    { slot: 'ammo',   label: 'Ammo'   },
+  ],
+  [
     { slot: 'head',   label: 'Head'   },
     { slot: 'neck',   label: 'Neck'   },
     { slot: 'ear1',   label: 'Ear 1'  },
-  ],
-  [
-    { slot: 'sub',    label: 'Sub'    },
-    { slot: 'body',   label: 'Body'   },
     { slot: 'ear2',   label: 'Ear 2'  },
-    { slot: 'hands',  label: 'Hands'  },
   ],
   [
-    { slot: 'ranged', label: 'Ranged' },
+    { slot: 'body',   label: 'Body'   },
+    { slot: 'hands',  label: 'Hands'  },
     { slot: 'ring1',  label: 'Ring 1' },
-    { slot: 'back',   label: 'Back'   },
     { slot: 'ring2',  label: 'Ring 2' },
   ],
   [
-    { slot: 'ammo',   label: 'Ammo'   },
+    { slot: 'back',   label: 'Back'   },
     { slot: 'waist',  label: 'Waist'  },
     { slot: 'legs',   label: 'Legs'   },
     { slot: 'feet',   label: 'Feet'   },

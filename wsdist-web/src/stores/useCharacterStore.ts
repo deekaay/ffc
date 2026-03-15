@@ -41,6 +41,8 @@ const DEFAULT_ENEMY: EnemyDef = {
   Location: 'Odyssey',
 }
 
+export type GearContext = 'tp1' | 'ws1' | 'tp2' | 'ws2'
+
 export const useCharacterStore = defineStore('character', {
   state: () => ({
     mainJob: 'sam',
@@ -50,9 +52,10 @@ export const useCharacterStore = defineStore('character', {
     masterLevel: 0,
     odysseyRank: '0',
 
-    quicklookGearset: emptyGearset() as Gearset,
-    tpGearset: emptyGearset() as Gearset,
-    wsGearset: emptyGearset() as Gearset,
+    tpGearset:  emptyGearset() as Gearset,
+    wsGearset:  emptyGearset() as Gearset,
+    tpGearset2: emptyGearset() as Gearset,
+    wsGearset2: emptyGearset() as Gearset,
 
     enemy: { ...DEFAULT_ENEMY } as EnemyDef,
     wsName: 'Tachi: Fudo',
@@ -77,13 +80,19 @@ export const useCharacterStore = defineStore('character', {
     setSubJob(jobCode: string) {
       this.subJob = jobCode
     },
-    setGear(context: 'quicklook' | 'tp' | 'ws', slot: GearSlotName, item: GearItem) {
-      const gs = context === 'tp' ? this.tpGearset : context === 'ws' ? this.wsGearset : this.quicklookGearset
+    setGear(context: GearContext, slot: GearSlotName, item: GearItem) {
+      const gs = context === 'tp1' ? this.tpGearset
+               : context === 'ws1' ? this.wsGearset
+               : context === 'tp2' ? this.tpGearset2
+               : this.wsGearset2
       gs[slot] = item
     },
-    copyGearset(from: 'quicklook' | 'tp' | 'ws', to: 'quicklook' | 'tp' | 'ws') {
-      const src = from === 'tp' ? this.tpGearset : from === 'ws' ? this.wsGearset : this.quicklookGearset
-      const dst = to === 'tp' ? this.tpGearset : to === 'ws' ? this.wsGearset : this.quicklookGearset
+    copyGearset(from: GearContext, to: GearContext) {
+      const pick = (c: GearContext) =>
+        c === 'tp1' ? this.tpGearset  : c === 'ws1' ? this.wsGearset :
+        c === 'tp2' ? this.tpGearset2 : this.wsGearset2
+      const src = pick(from)
+      const dst = pick(to)
       for (const slot in src) dst[slot as GearSlotName] = { ...src[slot as GearSlotName] }
     },
     setEnemy(enemy: EnemyDef) {
