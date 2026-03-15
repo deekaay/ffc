@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import GearSlot from './GearSlot.vue'
-import GearsetIO from './GearsetIO.vue'
 import type { Gearset, GearSlotName, GearItem } from '@/types/gear'
 import type { GearContext } from '@/stores/useCharacterStore'
 
@@ -13,7 +12,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:gear': [slot: GearSlotName, item: GearItem]
-  'import:gearset': [gearset: Gearset]
 }>()
 
 const SLOT_LAYOUT: { slot: GearSlotName; label: string }[] = [
@@ -43,11 +41,6 @@ function onSelect(slot: GearSlotName, item: GearItem) {
 <template>
   <div class="gear-panel">
     <div v-if="title" class="gear-panel-title">{{ title }}</div>
-    <GearsetIO
-      :gearset="gearset"
-      :title="title ?? ''"
-      @import="(gs) => emit('import:gearset', gs)"
-    />
     <div class="gear-grid">
       <GearSlot
         v-for="cell in SLOT_LAYOUT"
