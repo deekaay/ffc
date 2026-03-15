@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue'
+import { watchEffect } from 'vue'
 import GearPanel from '@/components/shared/GearPanel.vue'
 import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useCharacterStore } from '@/stores/useCharacterStore'
@@ -17,11 +17,6 @@ const gearStore = useGearStore()
 function onGearUpdate(context: GearContext, slot: GearSlotName, item: GearItem) {
   charStore.setGear(context, slot, item)
 }
-
-// ── Player stats ──────────────────────────────────────────────────────────────
-const players = ref<{ tp1: Player | null; ws1: Player | null; tp2: Player | null; ws2: Player | null }>({
-  tp1: null, ws1: null, tp2: null, ws2: null,
-})
 
 let timer: ReturnType<typeof setTimeout> | null = null
 
@@ -45,12 +40,6 @@ watchEffect((onCleanup) => {
   if (timer) clearTimeout(timer)
   timer = setTimeout(() => {
     try {
-      players.value = {
-        tp1: simStore.buildCurrentPlayer('tp1'),
-        ws1: simStore.buildCurrentPlayer('ws1'),
-        tp2: simStore.buildCurrentPlayer('tp2'),
-        ws2: simStore.buildCurrentPlayer('ws2'),
-      }
       simStore.runPair(1)
       simStore.runPair(2)
     } catch (e) {
@@ -280,10 +269,10 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
             </tr>
             <tr v-for="row in group.rows" :key="row.key">
               <td class="stat-label">{{ row.label }}</td>
-              <td class="stat-val">{{ (row.format ?? fmt)(getVal(players.tp1, row.key)) }}</td>
-              <td class="stat-val">{{ (row.format ?? fmt)(getVal(players.ws1, row.key)) }}</td>
-              <td class="stat-val">{{ (row.format ?? fmt)(getVal(players.tp2, row.key)) }}</td>
-              <td class="stat-val">{{ (row.format ?? fmt)(getVal(players.ws2, row.key)) }}</td>
+              <td class="stat-val">{{ (row.format ?? fmt)(getVal(simStore.players.tp1, row.key)) }}</td>
+              <td class="stat-val">{{ (row.format ?? fmt)(getVal(simStore.players.ws1, row.key)) }}</td>
+              <td class="stat-val">{{ (row.format ?? fmt)(getVal(simStore.players.tp2, row.key)) }}</td>
+              <td class="stat-val">{{ (row.format ?? fmt)(getVal(simStore.players.ws2, row.key)) }}</td>
             </tr>
           </template>
         </tbody>

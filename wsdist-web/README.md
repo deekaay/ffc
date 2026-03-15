@@ -49,12 +49,12 @@ wsdist-web/
 │   │   ├── enemy.ts            # EnemyDef
 │   │   ├── buffs.ts            # BuffSet, AggregatedBuffs
 │   │   ├── weaponskill.ts      # WeaponSkillInfo
-│   │   └── simulation.ts       # QuicklookResults
+│   │   └── simulation.ts       # SetResults
 │   ├── stores/
 │   │   ├── useGearStore.ts         # gear data loading + icon URL lookup
-│   │   ├── useCharacterStore.ts    # job, gearsets (3 contexts), enemy, WS params
+│   │   ├── useCharacterStore.ts    # job, gearsets (4 contexts), enemy, WS params
 │   │   ├── useBuffStore.ts         # songs/rolls/bubbles/WHM/food + aggregation
-│   │   └── useSimulationStore.ts   # quicklook computation
+│   │   └── useSimulationStore.ts   # runPair(1|2) computation, built Player objects
 │   ├── calc/                   # pure TypeScript calculation modules (no Vue/Pinia)
 │   │   ├── interp.ts           # 3-point linear interpolation (replaces np.interp)
 │   │   ├── getFstr.ts          # fSTR / fSTR2 melee bonus
@@ -74,16 +74,15 @@ wsdist-web/
 │   └── components/
 │       ├── tabs/
 │       │   ├── JobEnemyTab.vue     # Tab 0: job selector + enemy panel
-│       │   ├── BuffsTab.vue        # Tab 1: job abilities + buff panel
-│       │   ├── ResultsTab.vue      # Tab 2: gear panels + stats table + DPS results
+│       │   ├── BuffsTab.vue        # Tab 1: job abilities (WAR/MNK/DRK/SAM/etc) + buff panel
+│       │   ├── ResultsTab.vue      # Tab 2: two Set pairs + results column + stats table
 │       │   └── AutomatonTab.vue    # Tab 3: PUP-only puppet configuration
 │       └── shared/
 │           ├── JobSelector.vue      # main job / sub job / master level / WS selector
 │           ├── EnemyPanel.vue       # enemy preset + manual stat overrides
 │           ├── BuffPanel.vue        # BRD songs / COR rolls / GEO bubbles / WHM / food
 │           ├── GearSlot.vue         # single 32×32 item slot button + picker dialog
-│           ├── GearPanel.vue        # 4×4 paperdoll grid of GearSlots
-│           └── QuicklookResults.vue # live WS Damage / TP Round Dmg / Time/WS / DPS
+│           └── GearPanel.vue        # 4×4 paperdoll grid of GearSlots
 ```
 
 ## Data Flow
@@ -94,24 +93,27 @@ public/data/*.json
        ▼
 useGearStore (fetch on mount)
 useBuffStore ──────┐
-useCharacterStore ─┤──► useSimulationStore.runQuicklook()
+useCharacterStore ─┤──► useSimulationStore.runPair(1|2)
                    │            │
              createPlayer()     │     (calls calc/* modules)
                                 ▼
-                        QuicklookResults (live, debounced 200ms)
+                     set1Results / set2Results
+                     players.tp1/ws1/tp2/ws2
+                     (displayed in ResultsTab, debounced 300ms)
 ```
 
 ## Gear Contexts
 
-There are three independent gearsets, each a full 16-slot `Gearset` record:
+There are four independent gearsets, each a full 16-slot `Gearset` record:
 
 | Context key | Used for |
 |---|---|
-| `quicklookGearset` | Quicklook DPS shown at the bottom of the Results tab |
-| `tpGearset` | TP-phase set (shown on Results tab, reserved for future simulation mode) |
-| `wsGearset` | Weapon-skill set (shown on Results tab, reserved for future simulation mode) |
+| `tpGearset` | TP-phase set for Set 1 |
+| `wsGearset` | Weapon-skill set for Set 1 |
+| `tpGearset2` | TP-phase set for Set 2 |
+| `wsGearset2` | Weapon-skill set for Set 2 |
 
-All three gearsets are persisted per job via `pinia-plugin-persistedstate`.
+All four gearsets are persisted per job via `pinia-plugin-persistedstate`.
 
 ## Buff Aggregation
 
@@ -178,6 +180,6 @@ Gear selections, job, buff settings, and enemy config all survive page refresh.
 ## Adding a New Gear Slot
 
 1. Add the slot name to `GearSlotName` in `src/types/gear.ts`
-2. Add a default empty item in `useCharacterStore` for all three gearset initialisations
+2. Add a default empty item in `useCharacterStore` for all four gearset initialisations
 3. Add the slot to the appropriate row in `GearPanel.vue`'s `SLOT_LAYOUT`
 4. Add a JSON data file to `public/data/gear/` and fetch it in `useGearStore.loadGearData()`

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { SetResults } from '@/types/simulation'
+import type { Player } from '@/types/player'
 import { buildPlayer, buildEnemy } from '@/calc/createPlayer'
 import { averageAttackRound, averageWs } from '@/calc/actions'
 import { useCharacterStore } from '@/stores/useCharacterStore'
@@ -14,6 +15,12 @@ export const useSimulationStore = defineStore('simulation', {
   state: () => ({
     set1Results: null as SetResults | null,
     set2Results: null as SetResults | null,
+    players: {
+      tp1: null as Player | null,
+      ws1: null as Player | null,
+      tp2: null as Player | null,
+      ws2: null as Player | null,
+    },
   }),
 
   actions: {
@@ -112,8 +119,15 @@ export const useSimulationStore = defineStore('simulation', {
           wsDmgBreakdown: {},
         }
 
-        if (pair === 1) this.set1Results = result
-        else this.set2Results = result
+        if (pair === 1) {
+          this.set1Results = result
+          this.players.tp1 = tpPlayer
+          this.players.ws1 = wsPlayer
+        } else {
+          this.set2Results = result
+          this.players.tp2 = tpPlayer
+          this.players.ws2 = wsPlayer
+        }
       } catch (e) {
         console.error(`runPair(${pair}) failed:`, e)
       }

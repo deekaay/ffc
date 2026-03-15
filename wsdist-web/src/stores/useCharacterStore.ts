@@ -8,7 +8,7 @@ export type JobCode =
   | 'nin' | 'drg' | 'smn' | 'blu' | 'cor' | 'pup'
   | 'dnc' | 'sch' | 'geo' | 'run'
 
-export const JOBS_DICT: Record<string, string> = {
+export const JOBS_DICT: Record<string, JobCode> = {
   'Ninja': 'nin', 'Dark Knight': 'drk', 'Scholar': 'sch', 'Red Mage': 'rdm',
   'Black Mage': 'blm', 'Samurai': 'sam', 'Dragoon': 'drg', 'White Mage': 'whm',
   'Warrior': 'war', 'Corsair': 'cor', 'Bard': 'brd', 'Thief': 'thf',
@@ -51,8 +51,8 @@ export type GearContext = 'tp1' | 'ws1' | 'tp2' | 'ws2'
 
 export const useCharacterStore = defineStore('character', {
   state: () => ({
-    mainJob: 'sam',
-    subJob: 'war',
+    mainJob: 'sam' as JobCode,
+    subJob: 'war' as JobCode,
     mainJobLevel: 99,
     subJobLevel: 49,
     masterLevel: 0,
@@ -80,10 +80,10 @@ export const useCharacterStore = defineStore('character', {
   },
 
   actions: {
-    setMainJob(jobCode: string) {
+    setMainJob(jobCode: JobCode) {
       this.mainJob = jobCode
     },
-    setSubJob(jobCode: string) {
+    setSubJob(jobCode: JobCode) {
       this.subJob = jobCode
     },
     setGear(context: GearContext, slot: GearSlotName, item: GearItem) {

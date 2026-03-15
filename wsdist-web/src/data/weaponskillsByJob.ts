@@ -40,12 +40,12 @@ const POLEARM = [
 const KATANA = [
   'Blade: To', 'Blade: Chi', 'Blade: Jin', 'Blade: Retsu', 'Blade: Teki',
   'Blade: Ten', 'Blade: Ku', 'Blade: Yu', 'Blade: Hi', 'Blade: Shun',
-  'Blade: Kamu', 'Blade: Metsu', 'Blade: Sui',
+  'Blade: Kamu', 'Blade: Ei', 'Blade: Metsu',
 ]
 const GREAT_KATANA = [
-  'Tachi: Enpi', 'Tachi: Hobaku', 'Tachi: Goten', 'Tachi: Kagero', 'Tachi: Jinpu',
-  'Tachi: Koki', 'Tachi: Yukikaze', 'Tachi: Gekko', 'Tachi: Kaeru', 'Tachi: Rana',
-  'Tachi: Fudo', 'Tachi: Shoha', 'Tachi: Ageha', 'Tachi: Massacren',
+  'Tachi: Enpi', 'Tachi: Goten', 'Tachi: Kagero', 'Tachi: Jinpu',
+  'Tachi: Koki', 'Tachi: Yukikaze', 'Tachi: Gekko', 'Tachi: Kasha', 'Tachi: Rana',
+  'Tachi: Fudo', 'Tachi: Kaiten', 'Tachi: Shoha', 'Tachi: Ageha', 'Tachi: Mumei',
 ]
 const STAFF = [
   'Heavy Swing', 'Shell Crusher', 'Full Swing', 'Retribution',

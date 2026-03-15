@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import Select from 'primevue/select'
 import InputNumber from 'primevue/inputnumber'
 import { useCharacterStore, JOB_NAMES, JOBS_DICT } from '@/stores/useCharacterStore'
+import type { JobCode } from '@/stores/useCharacterStore'
 import { WS_BY_JOB, DEFAULT_WS_BY_JOB } from '@/data/weaponskillsByJob'
 
 const characterStore = useCharacterStore()
@@ -13,16 +14,14 @@ const jobOptions = JOB_NAMES.map((name) => ({
 }))
 
 const wsNameOptions = computed(() => {
-  const list = WS_BY_JOB[characterStore.mainJob as keyof typeof WS_BY_JOB] ?? []
-  return list.map((n) => ({ label: n, value: n }))
+  return (WS_BY_JOB[characterStore.mainJob] ?? []).map((n) => ({ label: n, value: n }))
 })
 
-function enforceWsName(jobCode: string) {
-  const available = WS_BY_JOB[jobCode as keyof typeof WS_BY_JOB] ?? []
+function enforceWsName(jobCode: JobCode) {
+  const available = WS_BY_JOB[jobCode] ?? []
   if (!available.includes(characterStore.wsName)) {
-    characterStore.wsName = DEFAULT_WS_BY_JOB[jobCode as keyof typeof DEFAULT_WS_BY_JOB]
-      ?? available[0]
-      ?? ''
+    // Prefer the job default, then first available — keep current if no options exist
+    characterStore.wsName = DEFAULT_WS_BY_JOB[jobCode] ?? available[0] ?? characterStore.wsName
   }
 }
 
@@ -31,7 +30,7 @@ onMounted(() => enforceWsName(characterStore.mainJob))
 
 const mainJobModel = computed({
   get: () => characterStore.mainJob,
-  set: (v: string) => {
+  set: (v: JobCode) => {
     characterStore.setMainJob(v)
     enforceWsName(v)
   },
@@ -39,7 +38,7 @@ const mainJobModel = computed({
 
 const subJobModel = computed({
   get: () => characterStore.subJob,
-  set: (v: string) => characterStore.setSubJob(v),
+  set: (v: JobCode) => characterStore.setSubJob(v),
 })
 
 const masterLevelModel = computed({

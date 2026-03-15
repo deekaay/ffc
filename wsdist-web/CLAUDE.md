@@ -11,8 +11,8 @@ This file is for AI agents and developers picking up work on this codebase. Read
 The user fills in three tabs left-to-right:
 
 1. **Job & Enemy** — pick main job, sub job, master level, enemy preset, WS threshold
-2. **Buffs** — job abilities + BRD/COR/GEO/WHM/food buffs
-3. **Results** — three gear panels (Quicklook / TP / WS sets), a player stats table, and live quicklook DPS numbers
+2. **Buffs** — job abilities (WAR/MNK/DRK/SAM/THF/etc checkboxes) + BRD/COR/GEO/WHM/food buffs
+3. **Results** — two named set pairs (Set 1, Set 2), each with a TP gear panel and a WS gear panel; DPS is computed independently per pair via `runPair(1|2)`; player stats table below
 
 All state lives in four Pinia stores. Calculation is pure TypeScript in `src/calc/`. No backend, no server.
 
@@ -21,9 +21,9 @@ All state lives in four Pinia stores. Calculation is pure TypeScript in `src/cal
 | Store | What it owns |
 |---|---|
 | `useGearStore` | Fetches all JSON data on mount. Provides `getGearForJob(slotName, jobCode)` and `getIconUrl(name)`. Source of truth for available items. |
-| `useCharacterStore` | Main/sub job, master level, three gearsets, enemy config, WS name, WS threshold, job abilities dict. Has `setMainJob` / `setSubJob` actions. Persisted. |
+| `useCharacterStore` | Main/sub job (`JobCode` type), master level, four gearsets (`tpGearset`/`wsGearset` = Set 1, `tpGearset2`/`wsGearset2` = Set 2), enemy config, WS name, WS threshold, job abilities dict. Persisted. |
 | `useBuffStore` | BRD songs, COR rolls, GEO bubbles, WHM spells, food, ability flags. `aggregatedBuffs` getter returns a flat stat-delta object consumed by `createPlayer`. Persisted. |
-| `useSimulationStore` | Calls `buildCurrentPlayer()` → `runQuicklook()` → stores `quicklookResults`. No Web Worker. |
+| `useSimulationStore` | Runs `runPair(1\|2)` → stores `set1Results`/`set2Results` and built `players` (tp1/ws1/tp2/ws2). `buildCurrentPlayer(context)` and `buildCurrentEnemy()` are also public for external use. |
 
 ## Critical gotchas
 
@@ -35,11 +35,15 @@ Vue 3 intercepts `:slot` as the dynamic named-slot directive (legacy Vue 2 synta
 
 ### WS list comes from a static map, not the gear JSON
 
-`public/data/gear/all_gear.json` has no `WS: true` field on any item. Do not try to derive the WS list from gear data. The authoritative source is `src/data/weaponskillsByJob.ts` which has static arrays per job. If you need to add WSes, edit that file.
+`public/data/gear/all_gear.json` has no `WS: true` field on any item. Do not try to derive the WS list from gear data. The authoritative source is `src/data/weaponskillsByJob.ts`. The WS names there must exactly match the `wsName ===` branches in `src/calc/weaponskillInfo.ts` — a mismatch silently produces 0 damage.
 
-### Job codes are lowercase two-letter strings
+### `averageWs` takes `wsType` ('melee'/'ranged'), not `input_metric`
 
-`war`, `mnk`, `whm`, `blm`, `rdm`, `thf`, `pld`, `drk`, `bst`, `brd`, `rng`, `sam`, `nin`, `drg`, `smn`, `blu`, `cor`, `pup`, `dnc`, `sch`, `geo`, `run`. Store state, JSON data, and all calc functions use this convention throughout.
+Python's `average_ws` has two separate params: `ws_type` and `input_metric`. The TypeScript port dropped `input_metric`. Always pass `'melee'` or `'ranged'` (from `RANGED_WS.has(wsName)`) as the `wsType` argument — passing anything else silently skips all physical damage calculation.
+
+### Job codes are lowercase two-letter strings typed as `JobCode`
+
+`war`, `mnk`, `whm`, `blm`, `rdm`, `thf`, `pld`, `drk`, `bst`, `brd`, `rng`, `sam`, `nin`, `drg`, `smn`, `blu`, `cor`, `pup`, `dnc`, `sch`, `geo`, `run`. The `JobCode` union type is exported from `useCharacterStore`. `WS_BY_JOB` and `DEFAULT_WS_BY_JOB` are `Record<JobCode, ...>` — TypeScript will error if a job is missing.
 
 ### `createPlayer` is a pure function
 
@@ -65,18 +69,11 @@ When a calc module produces wrong numbers, the Python reference is in `../wsdist
 |---|---|
 | `calc/createPlayer.ts` | `create_player.py` (most complex — job ability interactions lines 230–700+) |
 | `calc/weaponskillInfo.ts` | `weaponskill_info.py` (~1,837-line if/elif chain) |
-| `calc/actions.ts` | `actions.py` (attack round logic, quicklook) |
+| `calc/actions.ts` | `actions.py` — `average_attack_round`, `average_ws` |
 | `calc/getFstr.ts` | `get_fstr.py` |
 | `calc/getPdif.ts` | `get_pdif.py` |
 | `calc/nuking.ts` | `nuking.py` |
 | `stores/useBuffStore.ts` | `gui_main.py` — `aggregate_buffs` method |
-
-## Open PRs (as of 2026-03-14)
-
-- **PR #1** `feat/buffs-tab-reorganize` — tab reorganization, abilities moved to Buffs tab, buff enable flags removed
-- **PR #2** `feat/ws-by-job` — WS dropdown fixed with static job→WS mapping
-
-Neither is merged to `main` yet. This docs branch (`docs/initial`) was cut from `main` before those PRs, so the code on `main` predates both changes.
 
 ## Git workflow
 
@@ -87,7 +84,8 @@ Neither is merged to `main` yet. This docs branch (`docs/initial`) was cut from 
 
 ## Known missing features / future work
 
-- TP and WS gearsets on the Results tab are visible but don't yet influence the Quicklook DPS number — only the Quicklook gearset is fed into `runQuicklook()`. Full TP/WS set simulation (attack round loop) was removed when the 2-hour simulation feature was cut; it could be re-added as a Web Worker.
+- Each set pair shares the same WS name (from `charStore.wsName`). Per-set WS selection is not yet implemented.
+- A full simulation loop (TP accumulation → WS, repeated over N minutes) was removed when the 2-hour sim feature was cut. Could be re-added as a Web Worker; see `run_simulation` in `actions.py` for the Python reference.
 - The optimizer feature was removed entirely. If re-adding, it needs its own Pinia store (`useOptimizerStore`) and a Web Worker (`optimizerWorker.ts`). The Python reference is `wsdist.py` → `build_set`.
 - `AutomatonTab.vue` exists but may need additional attachment logic from `pup_attachments.json`.
 - `chart.js` and `vue-chartjs` are bundled but not used in the current UI.
