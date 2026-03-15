@@ -43,19 +43,6 @@ onMounted(async () => {
 </template>
 
 <style>
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #1a1a2e;
-  color: #e0e0e0;
-  min-height: 100vh;
-}
-
 .app-container {
   max-width: 1600px;
   margin: 0 auto;
@@ -71,11 +58,5 @@ body {
 
 .app-tabs {
   width: 100%;
-}
-
-.tab-placeholder {
-  padding: 24px;
-  color: #888;
-  font-style: italic;
 }
 </style>
