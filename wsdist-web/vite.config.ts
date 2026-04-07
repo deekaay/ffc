@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 import { resolve } from 'path'
@@ -42,5 +42,12 @@ export default defineConfig({
   },
   worker: {
     format: 'es',
+  },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+    alias: {
+      '@': resolve(__dirname, './src'),
+    },
   },
 })
