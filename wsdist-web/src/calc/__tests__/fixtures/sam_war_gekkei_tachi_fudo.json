@@ -1,0 +1,45 @@
+{
+  "description": "SAM/WAR ML0, Gekkei R0 only, no buffs/abilities, vs Apex Bats",
+  "player": {
+    "mainJob": "sam",
+    "subJob": "war",
+    "masterLevel": 0,
+    "weapon": "Gekkei R0"
+  },
+  "enemy": {
+    "Level": 129,
+    "Defense": 1142,
+    "Evasion": 1043,
+    "VIT": 254,
+    "AGI": 298,
+    "MND": 233,
+    "INT": 233,
+    "CHR": 247,
+    "Magic Evasion": 0,
+    "Magic Defense": 0,
+    "Magic DT%": 0
+  },
+  "results": {
+    "averageWs": {
+      "1000tp": {
+        "damage": 268.0489,
+        "tpAfter": 37.992
+      },
+      "2000tp": {
+        "damage": 403.8584,
+        "tpAfter": 37.992
+      },
+      "3000tp": {
+        "damage": 556.598,
+        "tpAfter": 37.992
+      }
+    },
+    "averageAttackRound": {
+      "physicalDamage": 99.7125,
+      "tpPerRound": 78.9088,
+      "timePerRound": 7.5,
+      "magicalDamage": 0,
+      "timePerWs": 95.0464
+    }
+  }
+}

@@ -156,6 +156,8 @@ export function averageAttackRound(
 
   const attack1   = ps(player, 'Attack1')
   const attack2_0 = ps(player, 'Attack2')
+  const accuracy1   = ps(player, 'Accuracy1')
+  const accuracy2_0 = ps(player, 'Accuracy2')
 
   const oneHandedSkills = ['Axe', 'Club', 'Dagger', 'Sword', 'Katana']
   const twoHandedSkills = ['Great Sword', 'Great Katana', 'Great Axe', 'Polearm', 'Scythe', 'Staff']
@@ -163,15 +165,16 @@ export function averageAttackRound(
   const mainSkillType = (player.gearset['main']['Skill Type'] as string) ?? ''
   const subSkillTypeRaw = (player.gearset['sub']['Skill Type'] as string | undefined)
   const subSkillType = mainSkillType === 'Hand-to-Hand' ? 'Hand-to-Hand' : (subSkillTypeRaw ?? '')
-  const attack2 = mainSkillType === 'Hand-to-Hand' ? attack1 : attack2_0
+  const attack2   = mainSkillType === 'Hand-to-Hand' ? attack1   : attack2_0
+  const accuracy2 = mainSkillType === 'Hand-to-Hand' ? accuracy1 : accuracy2_0
 
   const hitRateCapMain = (oneHandedSkills.includes(mainSkillType) || mainSkillType === 'Hand-to-Hand') ? 0.99 : 0.95
   const hitRateCapSub  = subSkillType === 'Hand-to-Hand' ? 0.99 : 0.95
 
-  const hitRate11 = getHitRate(attack1,  enemyEvasion, hitRateCapMain)
-  let   hitRate12 = getHitRate(attack1,  enemyEvasion, hitRateCapMain)
-  let   hitRate21 = getHitRate(attack2,  enemyEvasion, hitRateCapSub)
-  let   hitRate22 = getHitRate(attack2,  enemyEvasion, hitRateCapSub)
+  const hitRate11 = getHitRate(accuracy1, enemyEvasion, hitRateCapMain)
+  let   hitRate12 = hitRate11
+  let   hitRate21 = getHitRate(accuracy2, enemyEvasion, hitRateCapSub)
+  let   hitRate22 = hitRate21
 
   if (!dualWield) { hitRate21 = 0; hitRate22 = 0 }
 
@@ -196,7 +199,7 @@ export function averageAttackRound(
   // Zanshin
   const zanshin = Math.min(ps(player, 'Zanshin') / 100, 1.0)
   const zanhasso = ps(player, 'Zanhasso') / 100
-  const zanshinHitRate = getHitRate(attack1 + 34, enemyEvasion, 0.95)
+  const zanshinHitRate = getHitRate(accuracy1 + 34, enemyEvasion, 0.95)
   const zanshinOa2 = ps(player, 'Zanshin OA2') / 100
 
   // EnSpell
