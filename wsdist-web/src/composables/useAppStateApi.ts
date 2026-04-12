@@ -66,13 +66,13 @@ export interface SavedAppState {
 // ---------------------------------------------------------------------------
 // Gearset serialisation helpers
 // ---------------------------------------------------------------------------
-function packGearset(gs: Gearset): Record<GearSlotName, string> {
+export function packGearset(gs: Gearset): Record<GearSlotName, string> {
   const out = {} as Record<GearSlotName, string>
   for (const slot of SLOT_ORDER) out[slot] = gs[slot]?.Name2 || 'None'
   return out
 }
 
-function unpackGearset(
+export function unpackGearset(
   packed: Record<GearSlotName, string>,
   allGear: Record<string, GearItem>,
 ): { gearset: Gearset; unknownNames: string[] } {
