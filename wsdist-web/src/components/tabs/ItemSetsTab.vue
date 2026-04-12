@@ -24,8 +24,13 @@ const copiedToClipboard = ref(false)
 async function doLoad(key: string) {
   const trimmed = key.trim()
   if (!trimmed) return
+  if (!gearStore.loaded) {
+    error.value = 'Gear data is still loading — please try again in a moment.'
+    return
+  }
   loading.value = true
   error.value = ''
+  copiedToClipboard.value = false
   loadedGearset.value = null
   loadedKey.value = ''
   try {
@@ -62,6 +67,7 @@ function applyTo(ctx: GearContext) {
 }
 
 async function copyShareUrl() {
+  error.value = ''
   const url = `${window.location.origin}${window.location.pathname}#set/${loadedKey.value}`
   try {
     await navigator.clipboard.writeText(url)
@@ -115,6 +121,7 @@ async function copyShareUrl() {
         />
       </div>
 
+      <!-- context is required by GearPanel but not used for filtering; 'tp1' is a safe placeholder -->
       <GearPanel
         context="tp1"
         :gearset="loadedGearset"
