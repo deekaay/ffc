@@ -59,6 +59,11 @@ watch(dialogVisible, (open) => {
   }
 })
 
+const focusedIndex = ref(0)
+
+watch([searchQuery, sortKey], () => { focusedIndex.value = 0 })
+watch(dialogVisible, (open) => { if (open) focusedIndex.value = 0 }, { flush: 'post' })
+
 const STAT_DISPLAY = [
   'DMG','Delay','STR','DEX','VIT','AGI','INT','MND','CHR',
   'Attack','Accuracy','Ranged Attack','Ranged Accuracy','Magic Attack','Magic Accuracy',
@@ -76,8 +81,6 @@ function formatStats(item: GearItem): string {
   }
   return parts.join('\n') || 'No combat stats'
 }
-
-const emptyItem: GearItem = { Name: 'None', Name2: 'None', Jobs: [] }
 
 function pickItem(item: GearItem) {
   emit('select', item)
@@ -130,15 +133,38 @@ function pickItem(item: GearItem) {
         autofocus
       />
       <div class="gear-item-list">
-        <button class="gear-item-row" @click="pickItem(emptyItem)">
+        <!-- Pinned equipped row — always visible, click re-equips directly -->
+        <button
+          v-if="item.Name !== 'None'"
+          class="gear-item-row equipped-pin"
+          :title="formatStats(item)"
+          @click="pickItem(item)"
+        >
+          <span class="equipped-badge">ON</span>
+          <img
+            v-if="iconUrl"
+            :src="iconUrl"
+            class="gear-icon-sm"
+            loading="lazy"
+          />
+          <span class="gear-item-name">{{ item.Name }}</span>
+          <span class="gear-item-stats">{{ formatStats(item).replace(/\n/g, '  ') }}</span>
+        </button>
+        <!-- None row -->
+        <button
+          class="gear-item-row"
+          :class="{ focused: focusedIndex === 0 }"
+          @click="focusedIndex = 0"
+        >
           <span class="gear-item-name">None</span>
         </button>
         <button
-          v-for="gi in displayList"
+          v-for="(gi, i) in displayList"
           :key="gi.Name2 ?? gi.Name"
           class="gear-item-row"
+          :class="{ focused: focusedIndex === i + 1 }"
           :title="formatStats(gi)"
-          @click="pickItem(gi)"
+          @click="focusedIndex = i + 1"
         >
           <img
             v-if="gearStore.getIconUrl(gi.Name2 ?? gi.Name)"
@@ -277,5 +303,27 @@ function pickItem(item: GearItem) {
   border-color: #5580cc;
   background: #1a2a4a;
   color: #a0c4ff;
+}
+
+.gear-item-row.equipped-pin {
+  background: #1e3a20;
+  border: 1px solid #3a6040;
+  border-radius: 3px;
+}
+
+.equipped-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #7acc88;
+  background: #1a4020;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.gear-item-row.focused {
+  background: #1a3660;
+  border: 1px solid #5580cc;
+  outline: none;
 }
 </style>
