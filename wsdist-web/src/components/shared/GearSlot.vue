@@ -82,6 +82,9 @@ function formatStats(item: GearItem): string {
   return parts.join('\n') || 'No combat stats'
 }
 
+// @ts-ignore — used by confirmFocused() added in Task 4
+const emptyItem: GearItem = { Name: 'None', Name2: 'None', Jobs: [] }
+
 function pickItem(item: GearItem) {
   emit('select', item)
   dialogVisible.value = false
