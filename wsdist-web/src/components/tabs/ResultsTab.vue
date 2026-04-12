@@ -85,10 +85,6 @@ function fmt1(v: number | undefined | null): string {
   return v.toFixed(1)
 }
 
-function getTooltip(key: string): string | undefined {
-  return statGlossary[key]
-}
-
 const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?: (v: unknown) => string }[] }[] = [
   {
     label: 'Primary Stats',
@@ -299,14 +295,13 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
             <tr v-for="row in group.rows" :key="row.key">
               <td class="stat-label">
                 <span class="stat-label-text">{{ row.label }}</span>
-                <span
-                  v-if="getTooltip(row.key)"
-                  v-tooltip.bottom="getTooltip(row.key)"
+                <button
+                  v-if="statGlossary[row.key]"
+                  type="button"
+                  v-tooltip.bottom="statGlossary[row.key]"
                   class="stat-help"
-                  tabindex="0"
-                  role="button"
                   :aria-label="`Explain ${row.label}`"
-                >?</span>
+                >?</button>
               </td>
               <td class="stat-val">{{ (row.format ?? fmt)(getVal(simStore.players.tp1, row.key)) }}</td>
               <td class="stat-val">{{ (row.format ?? fmt)(getVal(simStore.players.ws1, row.key)) }}</td>
@@ -494,12 +489,14 @@ tbody tr:not(.group-header):hover {
   margin-left: 0.35rem;
   border: 1px solid #5e7bbb;
   border-radius: 999px;
+  background: transparent;
   color: #9cc4ff;
   font-size: 0.7rem;
   font-weight: 700;
   line-height: 1;
   cursor: help;
   vertical-align: middle;
+  padding: 0;
 }
 
 .stat-help:focus-visible {
