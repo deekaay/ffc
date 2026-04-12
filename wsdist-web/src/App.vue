@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useGearStore } from '@/stores/useGearStore'
 import { useCharacterStore } from '@/stores/useCharacterStore'
 import { useBuffStore } from '@/stores/useBuffStore'
@@ -29,6 +29,11 @@ const { packGearset, unpackGearset, saveAppState, fetchAppState, isValidKey } = 
 // ─── Tab routing ─────────────────────────────────────────────────────────────
 const activeTab = ref('0')
 const itemSetInitialKey = ref('')
+
+// Reset to Results if the user switches away from PUP while on the Automaton tab
+watch(() => characterStore.mainJob, (job) => {
+  if (job !== 'pup' && activeTab.value === '4') activeTab.value = '2'
+})
 
 // ─── Share dialog state ───────────────────────────────────────────────────────
 const shareDialogVisible = ref(false)
@@ -174,6 +179,10 @@ onMounted(async () => {
   const hash = window.location.hash.replace(/^#/, '').trim()
 
   if (isEquipmentSetHash(hash)) {
+    if (!gearStore.loaded) {
+      loadError.value = 'Gear data failed to load; cannot restore saved set.'
+      return
+    }
     itemSetInitialKey.value = extractSetKey(hash)
     activeTab.value = '3'
     return
