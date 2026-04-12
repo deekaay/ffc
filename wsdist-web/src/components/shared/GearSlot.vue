@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import type { GearItem, GearSlotName } from '@/types/gear'
@@ -50,6 +50,13 @@ const displayList = computed(() => {
   }
 
   return items
+})
+
+watch(dialogVisible, (open) => {
+  if (open) {
+    searchQuery.value = ''
+    sortKey.value = 'name'
+  }
 })
 
 const STAT_DISPLAY = [
@@ -130,7 +137,6 @@ function pickItem(item: GearItem) {
           v-for="gi in displayList"
           :key="gi.Name2 ?? gi.Name"
           class="gear-item-row"
-          :class="{ selected: gi.Name === item.Name }"
           :title="formatStats(gi)"
           @click="pickItem(gi)"
         >
@@ -222,10 +228,6 @@ function pickItem(item: GearItem) {
 
 .gear-item-row:hover {
   background: #1e2e50;
-}
-
-.gear-item-row.selected {
-  background: #1a3660;
 }
 
 .gear-icon-sm {
