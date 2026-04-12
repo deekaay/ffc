@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watchEffect } from 'vue'
+import { watchEffect, ref } from 'vue'
 import GearPanel from '@/components/shared/GearPanel.vue'
 import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useCharacterStore } from '@/stores/useCharacterStore'
@@ -8,11 +8,21 @@ import { useGearStore } from '@/stores/useGearStore'
 import type { Player } from '@/types/player'
 import type { GearSlotName, GearItem } from '@/types/gear'
 import type { GearContext } from '@/stores/useCharacterStore'
+import { saveEquipmentSet } from '@/composables/useEquipmentSetApi'
+import type { Gearset } from '@/types/gear'
+import Dialog from 'primevue/dialog'
+import Button from 'primevue/button'
 
 const simStore = useSimulationStore()
 const charStore = useCharacterStore()
 const buffStore = useBuffStore()
 const gearStore = useGearStore()
+
+const setShareUrl = ref('')
+const setShareVisible = ref(false)
+const setSaving = ref(false)
+const setError = ref('')
+const setCopied = ref(false)
 
 function onGearUpdate(context: GearContext, slot: GearSlotName, item: GearItem) {
   charStore.setGear(context, slot, item)
@@ -82,6 +92,30 @@ function fmt0(v: number | undefined | null): string {
 function fmt1(v: number | undefined | null): string {
   if (v == null || isNaN(v)) return '—'
   return v.toFixed(1)
+}
+
+async function onSaveGearset(gearset: Gearset) {
+  setSaving.value = true
+  setError.value = ''
+  try {
+    const key = await saveEquipmentSet(gearset)
+    setShareUrl.value = `${window.location.origin}${window.location.pathname}#set/${key}`
+    setShareVisible.value = true
+  } catch (e) {
+    setError.value = e instanceof Error ? e.message : 'Save failed'
+  } finally {
+    setSaving.value = false
+  }
+}
+
+async function copySetUrl() {
+  try {
+    await navigator.clipboard.writeText(setShareUrl.value)
+    setCopied.value = true
+    setTimeout(() => { setCopied.value = false }, 1500)
+  } catch {
+    setError.value = 'Clipboard write failed — copy the URL manually.'
+  }
 }
 
 const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?: (v: unknown) => string }[] }[] = [
@@ -171,7 +205,15 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
 
       <!-- Set 1 -->
       <div class="set-panel">
-        <div class="set-panel-header">Set 1</div>
+        <div class="set-panel-header">
+          Set 1
+          <Button icon="pi pi-save" size="small" text severity="secondary"
+            :loading="setSaving" title="Save &amp; share TP set"
+            @click="onSaveGearset(charStore.tpGearset)" />
+          <Button icon="pi pi-save" size="small" text severity="secondary"
+            :loading="setSaving" title="Save &amp; share WS set"
+            @click="onSaveGearset(charStore.wsGearset)" />
+        </div>
         <div class="set-grids">
           <GearPanel
             context="tp1"
@@ -192,7 +234,15 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
 
       <!-- Set 2 -->
       <div class="set-panel">
-        <div class="set-panel-header">Set 2</div>
+        <div class="set-panel-header">
+          Set 2
+          <Button icon="pi pi-save" size="small" text severity="secondary"
+            :loading="setSaving" title="Save &amp; share TP set"
+            @click="onSaveGearset(charStore.tpGearset2)" />
+          <Button icon="pi pi-save" size="small" text severity="secondary"
+            :loading="setSaving" title="Save &amp; share WS set"
+            @click="onSaveGearset(charStore.wsGearset2)" />
+        </div>
         <div class="set-grids">
           <GearPanel
             context="tp2"
@@ -303,6 +353,26 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
       </table>
     </div>
 
+    <!-- Equipment set share dialog -->
+    <Dialog
+      v-model:visible="setShareVisible"
+      header="Share This Item Set"
+      modal
+      :style="{ width: '420px' }"
+    >
+      <p class="share-hint">Anyone with this link can load this gear set:</p>
+      <div class="share-url-row">
+        <span class="share-url-text">{{ setShareUrl }}</span>
+        <Button
+          :label="setCopied ? 'Copied!' : 'Copy'"
+          icon="pi pi-copy"
+          size="small"
+          @click="copySetUrl"
+        />
+      </div>
+    </Dialog>
+    <span v-if="setError" class="set-error">{{ setError }}</span>
+
   </div>
 </template>
 
@@ -340,6 +410,40 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
   color: #a0c4ff;
   text-transform: uppercase;
   letter-spacing: 0.07em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.share-hint {
+  font-size: 0.85rem;
+  color: #a0b8d8;
+  margin: 0 0 10px;
+}
+
+.share-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #0c1428;
+  border: 1px solid #2e3f6a;
+  border-radius: 4px;
+  padding: 6px 10px;
+}
+
+.share-url-text {
+  flex: 1;
+  font-size: 0.78rem;
+  font-family: 'Courier New', monospace;
+  color: #c8e0ff;
+  word-break: break-all;
+}
+
+.set-error {
+  font-size: 0.78rem;
+  color: #ff8080;
+  display: block;
+  margin-top: 4px;
 }
 
 .set-grids {
