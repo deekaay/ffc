@@ -207,9 +207,9 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
         <div class="set-panel-header">
           Set 1
           <Button icon="pi pi-save" size="small" text severity="secondary" title="Save TP Set 1"
-            :loading="setSaving" @click="onSaveGearset(charStore.tpGearset)" />
+            aria-label="Save TP Set 1" :loading="setSaving" @click="onSaveGearset(charStore.tpGearset)" />
           <Button icon="pi pi-save" size="small" text severity="secondary" title="Save WS Set 1"
-            :loading="setSaving" @click="onSaveGearset(charStore.wsGearset)" />
+            aria-label="Save WS Set 1" :loading="setSaving" @click="onSaveGearset(charStore.wsGearset)" />
         </div>
         <div class="set-grids">
           <GearPanel
@@ -234,9 +234,9 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
         <div class="set-panel-header">
           Set 2
           <Button icon="pi pi-save" size="small" text severity="secondary" title="Save TP Set 2"
-            :loading="setSaving" @click="onSaveGearset(charStore.tpGearset2)" />
+            aria-label="Save TP Set 2" :loading="setSaving" @click="onSaveGearset(charStore.tpGearset2)" />
           <Button icon="pi pi-save" size="small" text severity="secondary" title="Save WS Set 2"
-            :loading="setSaving" @click="onSaveGearset(charStore.wsGearset2)" />
+            aria-label="Save WS Set 2" :loading="setSaving" @click="onSaveGearset(charStore.wsGearset2)" />
         </div>
         <div class="set-grids">
           <GearPanel
@@ -402,18 +402,24 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
 .share-url-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
+  background: #0c1428;
+  border: 1px solid #2e3f6a;
+  border-radius: 4px;
+  padding: 6px 10px;
 }
 
 .share-url-text {
   flex: 1;
+  font-size: 0.78rem;
+  font-family: 'Courier New', monospace;
+  color: #c8e0ff;
   word-break: break-all;
-  font-size: 0.85rem;
 }
 
 .set-error {
-  color: #f87171;
-  font-size: 0.85rem;
+  color: #ff8080;
+  font-size: 0.78rem;
 }
 
 .set-grids {
