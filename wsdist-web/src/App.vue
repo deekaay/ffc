@@ -27,8 +27,9 @@ const buffStore = useBuffStore()
 const { packGearset, unpackGearset, saveAppState, fetchAppState, isValidKey } = useAppStateApi()
 
 // ─── Tab routing state ────────────────────────────────────────────────────────
-const activeTab = ref('0')
-const itemSetInitialKey = ref('')
+const _initialHash = window.location.hash.replace(/^#/, '').trim()
+const activeTab = ref(isEquipmentSetHash(_initialHash) ? '3' : '0')
+const itemSetInitialKey = ref(isEquipmentSetHash(_initialHash) ? extractSetKey(_initialHash) : '')
 
 // ─── Share dialog state ───────────────────────────────────────────────────────
 const shareDialogVisible = ref(false)
@@ -169,13 +170,12 @@ async function copyShareUrl() {
 
 // ─── Load state from URL hash on mount ───────────────────────────────────────
 onMounted(async () => {
+  loadError.value = ''
   await gearStore.loadGearData()
 
   const hash = window.location.hash.replace(/^#/, '').trim()
 
   if (isEquipmentSetHash(hash)) {
-    itemSetInitialKey.value = extractSetKey(hash)
-    activeTab.value = '3'
     return
   }
 
