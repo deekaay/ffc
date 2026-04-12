@@ -263,7 +263,7 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
                 <tr>
                   <th>TP</th>
                   <th>WS Dmg</th>
-                  <th>Time</th>
+                  <th>Time/WS (s)</th>
                   <th>DPS</th>
                 </tr>
               </thead>
@@ -323,7 +323,7 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
                 <tr>
                   <th>TP</th>
                   <th>WS Dmg</th>
-                  <th>Time</th>
+                  <th>Time/WS (s)</th>
                   <th>DPS</th>
                 </tr>
               </thead>
