@@ -52,17 +52,18 @@ const displayList = computed(() => {
   return items
 })
 
-watch(dialogVisible, (open) => {
-  if (open) {
-    searchQuery.value = ''
-    sortKey.value = 'name'
-  }
-})
-
 const focusedIndex = ref(0)
 
-watch([searchQuery, sortKey], () => { focusedIndex.value = 0 })
-watch(dialogVisible, (open) => { if (open) focusedIndex.value = 0 }, { flush: 'post' })
+watch(dialogVisible, (open) => {
+  if (!open) return
+  searchQuery.value = ''
+  sortKey.value = 'name'
+  focusedIndex.value = 0
+})
+
+watch([searchQuery, sortKey], () => {
+  if (dialogVisible.value) focusedIndex.value = 0
+})
 
 const STAT_DISPLAY = [
   'DMG','Delay','STR','DEX','VIT','AGI','INT','MND','CHR',
@@ -246,7 +247,7 @@ function pickItem(item: GearItem) {
   gap: 8px;
   padding: 4px 6px;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   text-align: left;
   border-radius: 3px;
