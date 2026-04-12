@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import GearPanel from '@/components/shared/GearPanel.vue'
@@ -18,7 +18,13 @@ const loadedGearset = ref<Gearset | null>(null)
 const loadedKey = ref('')
 const loading = ref(false)
 const error = ref('')
+const warning = ref('')
 const copiedToClipboard = ref(false)
+let copyResetTimer: ReturnType<typeof setTimeout> | null = null
+
+onBeforeUnmount(() => {
+  if (copyResetTimer) clearTimeout(copyResetTimer)
+})
 
 onMounted(() => {
   if (props.initialKey) doLoad(props.initialKey)
@@ -29,6 +35,7 @@ async function doLoad(key: string) {
   if (!trimmed) return
   loading.value = true
   error.value = ''
+  warning.value = ''
   loadedGearset.value = null
   loadedKey.value = ''
   try {
@@ -36,7 +43,7 @@ async function doLoad(key: string) {
     loadedGearset.value = result.gearset
     loadedKey.value = trimmed
     if (result.unknownNames.length > 0) {
-      error.value = `Unknown items (shown as empty): ${result.unknownNames.join(', ')}`
+      warning.value = `Unknown items (shown as empty): ${result.unknownNames.join(', ')}`
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Load failed'
@@ -56,7 +63,8 @@ async function copyShareUrl() {
   try {
     await navigator.clipboard.writeText(url)
     copiedToClipboard.value = true
-    setTimeout(() => { copiedToClipboard.value = false }, 1500)
+    if (copyResetTimer) clearTimeout(copyResetTimer)
+    copyResetTimer = setTimeout(() => { copiedToClipboard.value = false }, 1500)
   } catch {
     error.value = 'Clipboard write failed — copy the URL manually.'
   }
@@ -70,6 +78,7 @@ async function copyShareUrl() {
       <Button label="Load" :loading="loading" @click="doLoad(keyInput)" />
     </div>
     <div v-if="error" class="load-error">{{ error }}</div>
+    <div v-if="warning" class="load-warning">{{ warning }}</div>
 
     <template v-if="loadedGearset">
       <div class="loaded-header">
@@ -117,8 +126,13 @@ async function copyShareUrl() {
 }
 
 .load-error {
-  color: #f87171;
-  font-size: 0.85rem;
+  color: #ff8080;
+  font-size: 0.78rem;
+}
+
+.load-warning {
+  color: #fbbf24;
+  font-size: 0.78rem;
 }
 
 .loaded-header {
