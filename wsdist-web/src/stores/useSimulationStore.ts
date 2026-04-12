@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { SetResults } from '@/types/simulation'
+import type { SetResults, ThresholdComparisonRow, TpThreshold } from '@/types/simulation'
 import type { Player } from '@/types/player'
 import { buildPlayer, buildEnemy } from '@/calc/createPlayer'
 import { averageAttackRound, averageWs } from '@/calc/actions'
@@ -24,6 +24,40 @@ export const useSimulationStore = defineStore('simulation', {
   }),
 
   actions: {
+    calculateSetResults(
+      tpPlayer: Player,
+      wsPlayer: Player,
+      enemy: EnemyStats,
+      wsName: string,
+      wsThreshold: number,
+      wsType: 'melee' | 'ranged',
+    ): SetResults {
+      const tpRound = averageAttackRound(tpPlayer, enemy, wsThreshold / 2, wsThreshold, false)
+      const wsResult = averageWs(wsPlayer, enemy, wsName, wsThreshold, wsType, false)
+
+      const timePerAttackRound = (tpPlayer.stats['timePerAttackRound'] as number) ?? 3
+      const avgTpRoundDmg = tpRound.physicalDamage + tpRound.magicalDamage
+
+      const tpPerRound = tpRound.tpReturn || 1
+      const roundsToWs = Math.max(1, (wsThreshold - ((tpPlayer.stats['TP Bonus'] as number) ?? 0)) / tpPerRound)
+      const timeToWs = roundsToWs * timePerAttackRound + 2.0
+
+      const tpPhaseDamage = roundsToWs * avgTpRoundDmg
+      const dps = (tpPhaseDamage + wsResult.damage) / timeToWs
+
+      return {
+        wsDamage: wsResult.damage,
+        tpRoundDamage: avgTpRoundDmg,
+        timePerWs: timeToWs,
+        dps,
+        autoAttackDps: tpPhaseDamage / timeToWs,
+        wsDps: wsResult.damage / timeToWs,
+        wsDmgBreakdown: {},
+        thresholdComparisons: [],
+        optimalThreshold: 1000,
+      }
+    },
+
     buildCurrentPlayer(context: GearContext) {
       const charStore = useCharacterStore()
       const buffStore = useBuffStore()
@@ -97,29 +131,27 @@ export const useSimulationStore = defineStore('simulation', {
         const enemy = this.buildCurrentEnemy()
 
         const wsType = RANGED_WS.has(charStore.wsName) ? 'ranged' : 'melee'
+        const thresholds: TpThreshold[] = [1000, 2000, 3000]
+        const thresholdComparisons = thresholds.map((threshold) => {
+          const result = this.calculateSetResults(tpPlayer, wsPlayer, enemy, charStore.wsName, threshold, wsType)
+          return {
+            threshold,
+            wsDamage: result.wsDamage,
+            timePerWs: result.timePerWs,
+            dps: result.dps,
+            isOptimal: false,
+          } satisfies ThresholdComparisonRow
+        })
+        const bestDps = Math.max(...thresholdComparisons.map((row) => row.dps))
+        const comparisonRows = thresholdComparisons.map((row) => ({
+          ...row,
+          isOptimal: row.dps === bestDps,
+        }))
+        const optimalThreshold = comparisonRows.find((row) => row.isOptimal)?.threshold ?? 1000
 
-        const tpRound = averageAttackRound(tpPlayer, enemy, charStore.wsThreshold / 2, charStore.wsThreshold, false)
-        const wsResult = averageWs(wsPlayer, enemy, charStore.wsName, charStore.wsThreshold, wsType, false)
-
-        const timePerAttackRound = (tpPlayer.stats['timePerAttackRound'] as number) ?? 3
-        const avgTpRoundDmg = tpRound.physicalDamage + tpRound.magicalDamage
-
-        const tpPerRound = tpRound.tpReturn || 1
-        const roundsToWs = Math.max(1, (charStore.wsThreshold - (tpPlayer.stats['TP Bonus'] as number ?? 0)) / tpPerRound)
-        const timeToWs = roundsToWs * timePerAttackRound + 2.0
-
-        const tpPhaseDamage = roundsToWs * avgTpRoundDmg
-        const dps = (tpPhaseDamage + wsResult.damage) / timeToWs
-
-        const result: SetResults = {
-          wsDamage: wsResult.damage,
-          tpRoundDamage: avgTpRoundDmg,
-          timePerWs: timeToWs,
-          dps,
-          autoAttackDps: tpPhaseDamage / timeToWs,
-          wsDps: wsResult.damage / timeToWs,
-          wsDmgBreakdown: {},
-        }
+        const result = this.calculateSetResults(tpPlayer, wsPlayer, enemy, charStore.wsName, charStore.wsThreshold, wsType)
+        result.thresholdComparisons = comparisonRows
+        result.optimalThreshold = optimalThreshold
 
         if (pair === 1) {
           this.set1Results = result

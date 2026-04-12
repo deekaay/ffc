@@ -8,6 +8,7 @@ import { useGearStore } from '@/stores/useGearStore'
 import type { Player } from '@/types/player'
 import type { GearSlotName, GearItem } from '@/types/gear'
 import type { GearContext } from '@/stores/useCharacterStore'
+import type { SetResults, TpThreshold } from '@/types/simulation'
 
 const simStore = useSimulationStore()
 const charStore = useCharacterStore()
@@ -82,6 +83,18 @@ function fmt0(v: number | undefined | null): string {
 function fmt1(v: number | undefined | null): string {
   if (v == null || isNaN(v)) return '—'
   return v.toFixed(1)
+}
+
+function fmtThreshold(threshold: TpThreshold): string {
+  return `${threshold.toLocaleString()} TP`
+}
+
+function isCurrentThreshold(threshold: TpThreshold): boolean {
+  return charStore.wsThreshold === threshold
+}
+
+function optimalThresholdLabel(result: SetResults | null | undefined): string {
+  return result ? fmtThreshold(result.optimalThreshold) : '—'
 }
 
 const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?: (v: unknown) => string }[] }[] = [
@@ -240,6 +253,37 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
             <span class="metric-label">DPS</span>
             <span class="metric-value dps-value">{{ fmt1(simStore.set1Results?.dps) }}</span>
           </div>
+          <div class="threshold-section">
+            <div class="threshold-header">
+              <span class="metric-label">TP Threshold Comparison</span>
+              <span class="threshold-best">Best: {{ optimalThresholdLabel(simStore.set1Results) }}</span>
+            </div>
+            <table class="threshold-table">
+              <thead>
+                <tr>
+                  <th>TP</th>
+                  <th>WS Dmg</th>
+                  <th>Time</th>
+                  <th>DPS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in simStore.set1Results?.thresholdComparisons ?? []"
+                  :key="row.threshold"
+                  :class="{ optimal: row.isOptimal, current: isCurrentThreshold(row.threshold) }"
+                >
+                  <td>
+                    {{ fmtThreshold(row.threshold) }}
+                    <span v-if="isCurrentThreshold(row.threshold)" class="threshold-tag">Current</span>
+                  </td>
+                  <td>{{ fmt0(row.wsDamage) }}</td>
+                  <td>{{ fmt1(row.timePerWs) }}</td>
+                  <td>{{ fmt1(row.dps) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Set 2 results -->
@@ -268,6 +312,37 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
           <div class="metric-row dps-row">
             <span class="metric-label">DPS</span>
             <span class="metric-value dps-value">{{ fmt1(simStore.set2Results?.dps) }}</span>
+          </div>
+          <div class="threshold-section">
+            <div class="threshold-header">
+              <span class="metric-label">TP Threshold Comparison</span>
+              <span class="threshold-best">Best: {{ optimalThresholdLabel(simStore.set2Results) }}</span>
+            </div>
+            <table class="threshold-table">
+              <thead>
+                <tr>
+                  <th>TP</th>
+                  <th>WS Dmg</th>
+                  <th>Time</th>
+                  <th>DPS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in simStore.set2Results?.thresholdComparisons ?? []"
+                  :key="row.threshold"
+                  :class="{ optimal: row.isOptimal, current: isCurrentThreshold(row.threshold) }"
+                >
+                  <td>
+                    {{ fmtThreshold(row.threshold) }}
+                    <span v-if="isCurrentThreshold(row.threshold)" class="threshold-tag">Current</span>
+                  </td>
+                  <td>{{ fmt0(row.wsDamage) }}</td>
+                  <td>{{ fmt1(row.timePerWs) }}</td>
+                  <td>{{ fmt1(row.dps) }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -407,6 +482,72 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
   font-size: 1.3rem;
   font-weight: 700;
   color: #7dd8ff;
+}
+
+.threshold-section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #2e3f6a;
+}
+
+.threshold-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.threshold-best {
+  color: #f9d56e;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.threshold-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+}
+
+.threshold-table th,
+.threshold-table td {
+  padding: 5px 6px;
+  text-align: right;
+}
+
+.threshold-table th:first-child,
+.threshold-table td:first-child {
+  text-align: left;
+}
+
+.threshold-table thead th {
+  color: #8fa8d6;
+  font-weight: 700;
+  border-bottom: 1px solid #2e3f6a;
+}
+
+.threshold-table tbody tr + tr td {
+  border-top: 1px solid rgba(46, 63, 106, 0.6);
+}
+
+.threshold-table tbody tr.optimal {
+  background: rgba(125, 216, 255, 0.12);
+}
+
+.threshold-table tbody tr.current td:first-child {
+  color: #ffffff;
+}
+
+.threshold-tag {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: #253b6d;
+  color: #bfe0ff;
+  font-size: 0.64rem;
+  font-weight: 700;
 }
 
 /* ── Stats table ──────────────────────────────────── */
