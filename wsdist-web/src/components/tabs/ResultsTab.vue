@@ -5,6 +5,7 @@ import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useCharacterStore } from '@/stores/useCharacterStore'
 import { useBuffStore } from '@/stores/useBuffStore'
 import { useGearStore } from '@/stores/useGearStore'
+import { statGlossary } from '@/data/statGlossary'
 import type { Player } from '@/types/player'
 import type { GearSlotName, GearItem } from '@/types/gear'
 import type { GearContext } from '@/stores/useCharacterStore'
@@ -82,6 +83,10 @@ function fmt0(v: number | undefined | null): string {
 function fmt1(v: number | undefined | null): string {
   if (v == null || isNaN(v)) return '—'
   return v.toFixed(1)
+}
+
+function getTooltip(key: string): string | undefined {
+  return statGlossary[key]
 }
 
 const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?: (v: unknown) => string }[] }[] = [
@@ -292,7 +297,17 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
               <td colspan="5">{{ group.label }}</td>
             </tr>
             <tr v-for="row in group.rows" :key="row.key">
-              <td class="stat-label">{{ row.label }}</td>
+              <td class="stat-label">
+                <span class="stat-label-text">{{ row.label }}</span>
+                <span
+                  v-if="getTooltip(row.key)"
+                  v-tooltip.bottom="getTooltip(row.key)"
+                  class="stat-help"
+                  tabindex="0"
+                  role="button"
+                  :aria-label="`Explain ${row.label}`"
+                >?</span>
+              </td>
               <td class="stat-val">{{ (row.format ?? fmt)(getVal(simStore.players.tp1, row.key)) }}</td>
               <td class="stat-val">{{ (row.format ?? fmt)(getVal(simStore.players.ws1, row.key)) }}</td>
               <td class="stat-val">{{ (row.format ?? fmt)(getVal(simStore.players.tp2, row.key)) }}</td>
@@ -463,6 +478,33 @@ tbody tr:not(.group-header):hover {
   padding: 4px 12px;
   color: #d0d8f0;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+.stat-label-text {
+  vertical-align: middle;
+}
+
+.stat-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.35rem;
+  border: 1px solid #5e7bbb;
+  border-radius: 999px;
+  color: #9cc4ff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.stat-help:focus-visible {
+  outline: 2px solid #7dd8ff;
+  outline-offset: 2px;
 }
 
 .stat-val {
