@@ -20,7 +20,7 @@ const gearStore = useGearStore()
 
 const setShareUrl = ref('')
 const setShareVisible = ref(false)
-const setSaving = ref(false)
+const savingContext = ref<string>('')
 const setError = ref('')
 const setCopied = ref(false)
 
@@ -94,9 +94,10 @@ function fmt1(v: number | undefined | null): string {
   return v.toFixed(1)
 }
 
-async function onSaveGearset(gearset: Gearset) {
-  setSaving.value = true
+async function onSaveGearset(gearset: Gearset, ctx: string) {
+  savingContext.value = ctx
   setError.value = ''
+  setShareUrl.value = ''
   try {
     const key = await saveEquipmentSet(gearset)
     setShareUrl.value = `${window.location.origin}${window.location.pathname}#set/${key}`
@@ -104,7 +105,7 @@ async function onSaveGearset(gearset: Gearset) {
   } catch (e) {
     setError.value = e instanceof Error ? e.message : 'Save failed'
   } finally {
-    setSaving.value = false
+    savingContext.value = ''
   }
 }
 
@@ -208,11 +209,11 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
         <div class="set-panel-header">
           Set 1
           <Button icon="pi pi-save" size="small" text severity="secondary"
-            :loading="setSaving" title="Save &amp; share TP set"
-            @click="onSaveGearset(charStore.tpGearset)" />
+            :loading="savingContext === 'tp1'" title="Save &amp; share TP set"
+            @click="onSaveGearset(charStore.tpGearset, 'tp1')" />
           <Button icon="pi pi-save" size="small" text severity="secondary"
-            :loading="setSaving" title="Save &amp; share WS set"
-            @click="onSaveGearset(charStore.wsGearset)" />
+            :loading="savingContext === 'ws1'" title="Save &amp; share WS set"
+            @click="onSaveGearset(charStore.wsGearset, 'ws1')" />
         </div>
         <div class="set-grids">
           <GearPanel
@@ -237,11 +238,11 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
         <div class="set-panel-header">
           Set 2
           <Button icon="pi pi-save" size="small" text severity="secondary"
-            :loading="setSaving" title="Save &amp; share TP set"
-            @click="onSaveGearset(charStore.tpGearset2)" />
+            :loading="savingContext === 'tp2'" title="Save &amp; share TP set"
+            @click="onSaveGearset(charStore.tpGearset2, 'tp2')" />
           <Button icon="pi pi-save" size="small" text severity="secondary"
-            :loading="setSaving" title="Save &amp; share WS set"
-            @click="onSaveGearset(charStore.wsGearset2)" />
+            :loading="savingContext === 'ws2'" title="Save &amp; share WS set"
+            @click="onSaveGearset(charStore.wsGearset2, 'ws2')" />
         </div>
         <div class="set-grids">
           <GearPanel
@@ -359,6 +360,7 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
       header="Share This Item Set"
       modal
       :style="{ width: '420px' }"
+      @hide="setError = ''"
     >
       <p class="share-hint">Anyone with this link can load this gear set:</p>
       <div class="share-url-row">
