@@ -2,13 +2,17 @@ import type { GearItem, GearSlotName, Gearset } from '@/types/gear'
 import { isValidKey, packGearset, unpackGearset } from './useAppStateApi'
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? ''
+const EQUIPMENT_SET_HASH_PREFIX = 'set/'
 
 export function isEquipmentSetHash(hash: string): boolean {
-  return hash.startsWith('set/') && isValidKey(hash.slice(4))
+  return (
+    hash.startsWith(EQUIPMENT_SET_HASH_PREFIX) &&
+    isValidKey(hash.slice(EQUIPMENT_SET_HASH_PREFIX.length))
+  )
 }
 
 export function extractSetKey(hash: string): string {
-  return hash.slice(4)
+  return hash.slice(EQUIPMENT_SET_HASH_PREFIX.length)
 }
 
 export async function saveEquipmentSet(gearset: Gearset): Promise<string> {
