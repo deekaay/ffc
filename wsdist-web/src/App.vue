@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useGearStore } from '@/stores/useGearStore'
 import { useCharacterStore } from '@/stores/useCharacterStore'
 import { useBuffStore } from '@/stores/useBuffStore'
@@ -14,15 +14,26 @@ import JobEnemyTab from '@/components/tabs/JobEnemyTab.vue'
 import BuffsTab from '@/components/tabs/BuffsTab.vue'
 import ResultsTab from '@/components/tabs/ResultsTab.vue'
 import AutomatonTab from '@/components/tabs/AutomatonTab.vue'
+import ItemSetsTab from '@/components/tabs/ItemSetsTab.vue'
 import {
   useAppStateApi,
   type SavedAppState,
 } from '@/composables/useAppStateApi'
+import { isEquipmentSetHash, extractSetKey } from '@/composables/useEquipmentSetApi'
 
 const gearStore = useGearStore()
 const characterStore = useCharacterStore()
 const buffStore = useBuffStore()
 const { packGearset, unpackGearset, saveAppState, fetchAppState, isValidKey } = useAppStateApi()
+
+// ─── Tab routing ─────────────────────────────────────────────────────────────
+const activeTab = ref('0')
+const itemSetInitialKey = ref('')
+
+// Reset to Results if the user switches away from PUP while on the Automaton tab
+watch(() => characterStore.mainJob, (job) => {
+  if (job !== 'pup' && activeTab.value === '4') activeTab.value = '2'
+})
 
 // ─── Share dialog state ───────────────────────────────────────────────────────
 const shareDialogVisible = ref(false)
@@ -166,6 +177,17 @@ onMounted(async () => {
   await gearStore.loadGearData()
 
   const hash = window.location.hash.replace(/^#/, '').trim()
+
+  if (isEquipmentSetHash(hash)) {
+    if (!gearStore.loaded) {
+      loadError.value = 'Gear data failed to load; cannot restore saved set.'
+      return
+    }
+    itemSetInitialKey.value = extractSetKey(hash)
+    activeTab.value = '3'
+    return
+  }
+
   if (!isValidKey(hash)) return
 
   if (!gearStore.loaded) {
@@ -204,18 +226,20 @@ onMounted(async () => {
       </div>
     </div>
 
-    <Tabs value="0" class="app-tabs">
+    <Tabs v-model:value="activeTab" class="app-tabs">
       <TabList>
         <Tab value="0">Job &amp; Enemy</Tab>
         <Tab value="1">Buffs</Tab>
         <Tab value="2">Results</Tab>
-        <Tab v-if="characterStore.mainJob === 'pup'" value="3">Automaton</Tab>
+        <Tab value="3">Item Sets</Tab>
+        <Tab v-if="characterStore.mainJob === 'pup'" value="4">Automaton</Tab>
       </TabList>
       <TabPanels>
         <TabPanel value="0"><JobEnemyTab /></TabPanel>
         <TabPanel value="1"><BuffsTab /></TabPanel>
         <TabPanel value="2"><ResultsTab /></TabPanel>
-        <TabPanel v-if="characterStore.mainJob === 'pup'" value="3"><AutomatonTab /></TabPanel>
+        <TabPanel value="3"><ItemSetsTab :initial-key="itemSetInitialKey" /></TabPanel>
+        <TabPanel v-if="characterStore.mainJob === 'pup'" value="4"><AutomatonTab /></TabPanel>
       </TabPanels>
     </Tabs>
 
