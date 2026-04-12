@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
-import type { SetResults } from '@/types/simulation'
+import type { SetResults, ThresholdComparisonRow, TpThreshold } from '@/types/simulation'
 import type { Player } from '@/types/player'
 import { buildPlayer, buildEnemy } from '@/calc/createPlayer'
 import { averageAttackRound, averageWs } from '@/calc/actions'
+import { getDelayTiming } from '@/calc/getDelayTiming'
 import { useCharacterStore } from '@/stores/useCharacterStore'
 import type { GearContext } from '@/stores/useCharacterStore'
 import { RANGED_WS } from '@/data/weaponskillsByJob'
@@ -24,6 +25,53 @@ export const useSimulationStore = defineStore('simulation', {
   }),
 
   actions: {
+    calculateSetResults(
+      tpPlayer: Player,
+      wsPlayer: Player,
+      enemy: EnemyStats,
+      wsName: string,
+      wsThreshold: number,
+      wsType: 'melee' | 'ranged',
+    ): SetResults {
+      const tpRound = averageAttackRound(tpPlayer, enemy, wsThreshold / 2, wsThreshold, false)
+      const wsResult = averageWs(wsPlayer, enemy, wsName, wsThreshold, wsType, false)
+
+      const dualWield =
+        (tpPlayer.gearset['sub'].Type === 'Weapon') ||
+        (tpPlayer.gearset['main']['Skill Type'] === 'Hand-to-Hand')
+      const mainSkillType = (tpPlayer.gearset['main']['Skill Type'] as string) ?? ''
+      const timePerAttackRound = Math.max(0, getDelayTiming(
+        (tpPlayer.stats['Delay1'] as number) ?? 0,
+        dualWield && mainSkillType !== 'Hand-to-Hand' ? ((tpPlayer.stats['Delay2'] as number) ?? 0) : 0,
+        ((tpPlayer.stats['Dual Wield'] as number) ?? 0) / 100,
+        (tpPlayer.stats['Martial Arts'] as number) ?? 0,
+        (tpPlayer.stats['Magic Haste'] as number) ?? 0,
+        (tpPlayer.stats['JA Haste'] as number) ?? 0,
+        (tpPlayer.stats['Gear Haste'] as number) ?? 0,
+      ))
+      const avgTpRoundDmg = tpRound.physicalDamage + tpRound.magicalDamage
+
+      // In the non-simulation path, averageAttackRound returns time-to-WS in tpReturn.
+      const tpPhaseTime = tpRound.tpReturn > 0 ? tpRound.tpReturn : 9999
+      const roundsToWs = timePerAttackRound > 0 ? Math.max(1, tpPhaseTime / timePerAttackRound) : 1
+      const timeToWs = tpPhaseTime + 2.0
+
+      const tpPhaseDamage = roundsToWs * avgTpRoundDmg
+      const dps = (tpPhaseDamage + wsResult.damage) / timeToWs
+
+      return {
+        wsDamage: wsResult.damage,
+        tpRoundDamage: avgTpRoundDmg,
+        timePerWs: timeToWs,
+        dps,
+        autoAttackDps: tpPhaseDamage / timeToWs,
+        wsDps: wsResult.damage / timeToWs,
+        wsDmgBreakdown: {},
+        thresholdComparisons: [],
+        optimalThreshold: 1000,
+      }
+    },
+
     buildCurrentPlayer(context: GearContext) {
       const charStore = useCharacterStore()
       const buffStore = useBuffStore()
@@ -97,29 +145,27 @@ export const useSimulationStore = defineStore('simulation', {
         const enemy = this.buildCurrentEnemy()
 
         const wsType = RANGED_WS.has(charStore.wsName) ? 'ranged' : 'melee'
+        const thresholds: TpThreshold[] = [1000, 2000, 3000]
+        const thresholdComparisons = thresholds.map((threshold) => {
+          const result = this.calculateSetResults(tpPlayer, wsPlayer, enemy, charStore.wsName, threshold, wsType)
+          return {
+            threshold,
+            wsDamage: result.wsDamage,
+            timePerWs: result.timePerWs,
+            dps: result.dps,
+            isOptimal: false,
+          } satisfies ThresholdComparisonRow
+        })
+        const bestDps = Math.max(...thresholdComparisons.map((row) => row.dps))
+        const comparisonRows = thresholdComparisons.map((row) => ({
+          ...row,
+          isOptimal: row.dps === bestDps,
+        }))
+        const optimalThreshold = comparisonRows.find((row) => row.isOptimal)?.threshold ?? 1000
 
-        const tpRound = averageAttackRound(tpPlayer, enemy, charStore.wsThreshold / 2, charStore.wsThreshold, false)
-        const wsResult = averageWs(wsPlayer, enemy, charStore.wsName, charStore.wsThreshold, wsType, false)
-
-        const timePerAttackRound = (tpPlayer.stats['timePerAttackRound'] as number) ?? 3
-        const avgTpRoundDmg = tpRound.physicalDamage + tpRound.magicalDamage
-
-        const tpPerRound = tpRound.tpReturn || 1
-        const roundsToWs = Math.max(1, (charStore.wsThreshold - (tpPlayer.stats['TP Bonus'] as number ?? 0)) / tpPerRound)
-        const timeToWs = roundsToWs * timePerAttackRound + 2.0
-
-        const tpPhaseDamage = roundsToWs * avgTpRoundDmg
-        const dps = (tpPhaseDamage + wsResult.damage) / timeToWs
-
-        const result: SetResults = {
-          wsDamage: wsResult.damage,
-          tpRoundDamage: avgTpRoundDmg,
-          timePerWs: timeToWs,
-          dps,
-          autoAttackDps: tpPhaseDamage / timeToWs,
-          wsDps: wsResult.damage / timeToWs,
-          wsDmgBreakdown: {},
-        }
+        const result = this.calculateSetResults(tpPlayer, wsPlayer, enemy, charStore.wsName, charStore.wsThreshold, wsType)
+        result.thresholdComparisons = comparisonRows
+        result.optimalThreshold = optimalThreshold
 
         if (pair === 1) {
           this.set1Results = result

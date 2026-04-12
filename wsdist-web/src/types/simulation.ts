@@ -1,3 +1,13 @@
+export type TpThreshold = 1000 | 2000 | 3000
+
+export interface ThresholdComparisonRow {
+  threshold: TpThreshold
+  wsDamage: number
+  timePerWs: number
+  dps: number
+  isOptimal: boolean
+}
+
 export interface SetResults {
   wsDamage: number
   tpRoundDamage: number
@@ -6,4 +16,6 @@ export interface SetResults {
   autoAttackDps: number
   wsDps: number
   wsDmgBreakdown: Record<string, number>
+  thresholdComparisons: ThresholdComparisonRow[]
+  optimalThreshold: TpThreshold
 }
