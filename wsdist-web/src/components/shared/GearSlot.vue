@@ -30,12 +30,26 @@ const availableItems = computed(() => {
   return gearStore.getGearForJob(props.slotName, props.jobCode)
 })
 
-const filteredItems = computed(() => {
+const sortKey = ref<'name' | 'dmg'>('name')
+
+const displayList = computed(() => {
   const q = searchQuery.value.toLowerCase().trim()
-  if (!q) return availableItems.value
-  return availableItems.value.filter(i =>
-    i.Name.toLowerCase().includes(q) || (i.Name2 && i.Name2.toLowerCase().includes(q))
-  )
+  const equippedName = props.item.Name
+
+  let items = availableItems.value.filter(i => {
+    if (i.Name === equippedName) return false  // exclude equipped; shown as pinned row
+    if (!q) return true
+    return i.Name.toLowerCase().includes(q) || (i.Name2 ?? '').toLowerCase().includes(q)
+  })
+
+  if (sortKey.value === 'name') {
+    items = [...items].sort((a, b) => a.Name.localeCompare(b.Name))
+  } else {
+    // dmg high→low; items without DMG sort to the end
+    items = [...items].sort((a, b) => (b.DMG ?? -1) - (a.DMG ?? -1))
+  }
+
+  return items
 })
 
 const STAT_DISPLAY = [
@@ -86,9 +100,22 @@ function pickItem(item: GearItem) {
       v-model:visible="dialogVisible"
       :header="`${label ?? slotName} — ${jobCode.toUpperCase()}`"
       modal
-      :style="{ width: '500px', maxHeight: '80vh' }"
+      :style="{ width: '720px', maxHeight: '80vh' }"
       class="gear-dialog"
     >
+      <div class="sort-bar">
+        <span class="sort-bar-label">Sort:</span>
+        <button
+          class="sort-pill"
+          :class="{ active: sortKey === 'name' }"
+          @click="sortKey = 'name'"
+        >Name</button>
+        <button
+          class="sort-pill"
+          :class="{ active: sortKey === 'dmg' }"
+          @click="sortKey = 'dmg'"
+        >DMG</button>
+      </div>
       <InputText
         v-model="searchQuery"
         placeholder="Search items..."
@@ -100,7 +127,7 @@ function pickItem(item: GearItem) {
           <span class="gear-item-name">None</span>
         </button>
         <button
-          v-for="gi in filteredItems"
+          v-for="gi in displayList"
           :key="gi.Name2 ?? gi.Name"
           class="gear-item-row"
           :class="{ selected: gi.Name === item.Name }"
@@ -219,5 +246,34 @@ function pickItem(item: GearItem) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.sort-bar-label {
+  font-size: 0.72rem;
+  color: #8899bb;
+}
+
+.sort-pill {
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid #2e3f6a;
+  background: transparent;
+  color: #888;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.sort-pill.active {
+  border-color: #5580cc;
+  background: #1a2a4a;
+  color: #a0c4ff;
 }
 </style>
