@@ -14,15 +14,22 @@ import JobEnemyTab from '@/components/tabs/JobEnemyTab.vue'
 import BuffsTab from '@/components/tabs/BuffsTab.vue'
 import ResultsTab from '@/components/tabs/ResultsTab.vue'
 import AutomatonTab from '@/components/tabs/AutomatonTab.vue'
+import ItemSetsTab from '@/components/tabs/ItemSetsTab.vue'
 import {
   useAppStateApi,
   type SavedAppState,
 } from '@/composables/useAppStateApi'
+import { isEquipmentSetHash, extractSetKey } from '@/composables/useEquipmentSetApi'
 
 const gearStore = useGearStore()
 const characterStore = useCharacterStore()
 const buffStore = useBuffStore()
 const { packGearset, unpackGearset, saveAppState, fetchAppState, isValidKey } = useAppStateApi()
+
+// ─── Tab routing state ────────────────────────────────────────────────────────
+const _initialHash = window.location.hash.replace(/^#/, '').trim()
+const activeTab = ref(isEquipmentSetHash(_initialHash) ? '3' : '0')
+const itemSetInitialKey = ref(isEquipmentSetHash(_initialHash) ? extractSetKey(_initialHash) : '')
 
 // ─── Share dialog state ───────────────────────────────────────────────────────
 const shareDialogVisible = ref(false)
@@ -163,9 +170,15 @@ async function copyShareUrl() {
 
 // ─── Load state from URL hash on mount ───────────────────────────────────────
 onMounted(async () => {
+  loadError.value = ''
   await gearStore.loadGearData()
 
   const hash = window.location.hash.replace(/^#/, '').trim()
+
+  if (isEquipmentSetHash(hash)) {
+    return
+  }
+
   if (!isValidKey(hash)) return
 
   if (!gearStore.loaded) {
@@ -204,18 +217,20 @@ onMounted(async () => {
       </div>
     </div>
 
-    <Tabs value="0" class="app-tabs">
+    <Tabs v-model:value="activeTab" class="app-tabs">
       <TabList>
         <Tab value="0">Job &amp; Enemy</Tab>
         <Tab value="1">Buffs</Tab>
         <Tab value="2">Results</Tab>
-        <Tab v-if="characterStore.mainJob === 'pup'" value="3">Automaton</Tab>
+        <Tab value="3">Item Sets</Tab>
+        <Tab v-if="characterStore.mainJob === 'pup'" value="4">Automaton</Tab>
       </TabList>
       <TabPanels>
         <TabPanel value="0"><JobEnemyTab /></TabPanel>
         <TabPanel value="1"><BuffsTab /></TabPanel>
         <TabPanel value="2"><ResultsTab /></TabPanel>
-        <TabPanel v-if="characterStore.mainJob === 'pup'" value="3"><AutomatonTab /></TabPanel>
+        <TabPanel value="3"><ItemSetsTab :initial-key="itemSetInitialKey" /></TabPanel>
+        <TabPanel v-if="characterStore.mainJob === 'pup'" value="4"><AutomatonTab /></TabPanel>
       </TabPanels>
     </Tabs>
 
