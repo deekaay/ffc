@@ -54,6 +54,21 @@ const displayList = computed(() => {
 
 const focusedIndex = ref(0)
 
+const focusedItem = computed((): GearItem | null => {
+  if (focusedIndex.value === 0) return null
+  return displayList.value[focusedIndex.value - 1] ?? null
+})
+
+function detailStats(item: GearItem): { label: string; value: string }[] {
+  return STAT_DISPLAY
+    .filter(stat => item[stat] !== undefined && item[stat] !== 0)
+    .map(stat => {
+      const val = item[stat]
+      const formatted = typeof val === 'number' && val > 0 ? `+${val}` : String(val)
+      return { label: stat, value: formatted }
+    })
+}
+
 watch(dialogVisible, (open) => {
   if (!open) return
   searchQuery.value = ''
@@ -117,68 +132,99 @@ function pickItem(item: GearItem) {
       :style="{ width: '720px', maxHeight: '80vh' }"
       class="gear-dialog"
     >
-      <div class="sort-bar">
-        <span class="sort-bar-label">Sort:</span>
-        <button
-          class="sort-pill"
-          :class="{ active: sortKey === 'name' }"
-          @click="sortKey = 'name'"
-        >Name</button>
-        <button
-          class="sort-pill"
-          :class="{ active: sortKey === 'dmg' }"
-          @click="sortKey = 'dmg'"
-        >DMG</button>
-      </div>
-      <InputText
-        v-model="searchQuery"
-        placeholder="Search items..."
-        class="gear-search"
-        autofocus
-      />
-      <div class="gear-item-list">
-        <!-- Pinned equipped row — always visible, click re-equips directly -->
-        <button
-          v-if="item.Name !== 'None'"
-          class="gear-item-row equipped-pin"
-          :title="formatStats(item)"
-          @click="pickItem(item)"
-        >
-          <span class="equipped-badge">ON</span>
-          <img
-            v-if="iconUrl"
-            :src="iconUrl"
-            class="gear-icon-sm"
-            loading="lazy"
+      <div class="gear-picker-body">
+
+        <!-- Left column: search + sort + list -->
+        <div class="gear-list-col">
+          <div class="sort-bar">
+            <span class="sort-bar-label">Sort:</span>
+            <button
+              class="sort-pill"
+              :class="{ active: sortKey === 'name' }"
+              @click="sortKey = 'name'"
+            >Name</button>
+            <button
+              class="sort-pill"
+              :class="{ active: sortKey === 'dmg' }"
+              @click="sortKey = 'dmg'"
+            >DMG</button>
+          </div>
+          <InputText
+            v-model="searchQuery"
+            placeholder="Search items..."
+            class="gear-search"
+            autofocus
           />
-          <span class="gear-item-name">{{ item.Name }}</span>
-          <span class="gear-item-stats">{{ formatStats(item).replace(/\n/g, '  ') }}</span>
-        </button>
-        <!-- None row -->
-        <button
-          class="gear-item-row"
-          :class="{ focused: focusedIndex === 0 }"
-          @click="focusedIndex = 0"
-        >
-          <span class="gear-item-name">None</span>
-        </button>
-        <button
-          v-for="(gi, i) in displayList"
-          :key="gi.Name2 ?? gi.Name"
-          class="gear-item-row"
-          :class="{ focused: focusedIndex === i + 1 }"
-          :title="formatStats(gi)"
-          @click="focusedIndex = i + 1"
-        >
-          <img
-            v-if="gearStore.getIconUrl(gi.Name2 ?? gi.Name)"
-            :src="gearStore.getIconUrl(gi.Name2 ?? gi.Name)!"
-            class="gear-icon-sm"
-            loading="lazy"
-          />
-          <span class="gear-item-name">{{ gi.Name }}</span>
-          <span class="gear-item-stats">{{ formatStats(gi).replace(/\n/g, '  ') }}</span>
-        </button>
+          <div class="gear-item-list">
+            <!-- Pinned equipped row -->
+            <button
+              v-if="item.Name !== 'None'"
+              class="gear-item-row equipped-pin"
+              :title="formatStats(item)"
+              @click="pickItem(item)"
+            >
+              <span class="equipped-badge">ON</span>
+              <img
+                v-if="iconUrl"
+                :src="iconUrl"
+                class="gear-icon-sm"
+                loading="lazy"
+              />
+              <span class="gear-item-name">{{ item.Name }}</span>
+              <span class="gear-item-stats">{{ formatStats(item).replace(/\n/g, '  ') }}</span>
+            </button>
+            <!-- None row -->
+            <button
+              class="gear-item-row"
+              :class="{ focused: focusedIndex === 0 }"
+              @click="focusedIndex = 0"
+            >
+              <span class="gear-item-name">None</span>
+            </button>
+            <!-- Item rows -->
+            <button
+              v-for="(gi, i) in displayList"
+              :key="gi.Name2 ?? gi.Name"
+              class="gear-item-row"
+              :class="{ focused: focusedIndex === i + 1 }"
+              :title="formatStats(gi)"
+              @click="focusedIndex = i + 1"
+            >
+              <img
+                v-if="gearStore.getIconUrl(gi.Name2 ?? gi.Name)"
+                :src="gearStore.getIconUrl(gi.Name2 ?? gi.Name)!"
+                class="gear-icon-sm"
+                loading="lazy"
+              />
+              <span class="gear-item-name">{{ gi.Name }}</span>
+              <span class="gear-item-stats">{{ formatStats(gi).replace(/\n/g, '  ') }}</span>
+            </button>
+          </div>
+          <!-- Keyboard hint -->
+          <div class="keyboard-hint">↑↓ navigate &nbsp;·&nbsp; Enter equip &nbsp;·&nbsp; Esc close</div>
+        </div>
+
+        <!-- Right column: detail pane -->
+        <div class="gear-detail-col">
+          <template v-if="focusedItem">
+            <div class="detail-name">{{ focusedItem.Name }}</div>
+            <div class="detail-meta">{{ focusedItem.Type ?? 'Equipment' }}</div>
+            <div class="detail-stats-list">
+              <div
+                v-for="s in detailStats(focusedItem)"
+                :key="s.label"
+                class="detail-stat-row"
+              >
+                <span class="detail-stat-label">{{ s.label }}</span>
+                <span class="detail-stat-value">{{ s.value }}</span>
+              </div>
+            </div>
+          </template>
+          <div v-else class="detail-placeholder">
+            Select an item to see stats
+          </div>
+        </div>
+
       </div>
     </Dialog>
   </div>
@@ -234,7 +280,7 @@ function pickItem(item: GearItem) {
 }
 
 .gear-item-list {
-  max-height: 60vh;
+  flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -329,5 +375,81 @@ function pickItem(item: GearItem) {
   background: #1a3660;
   border: 1px solid #5580cc;
   outline: none;
+}
+
+/* ── Two-column picker layout ─────────────────── */
+.gear-picker-body {
+  display: flex;
+  gap: 0;
+  height: 480px;
+}
+
+.gear-list-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  padding: 4px 8px 8px;
+  border-right: 1px solid #2e3f6a;
+  min-width: 0;
+}
+
+.gear-detail-col {
+  width: 220px;
+  flex-shrink: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.detail-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #a0c4ff;
+}
+
+.detail-meta {
+  font-size: 0.75rem;
+  color: #8899bb;
+}
+
+.detail-stats-list {
+  border-top: 1px solid #2e3f6a;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.detail-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+}
+
+.detail-stat-label {
+  color: #8899bb;
+}
+
+.detail-stat-value {
+  color: #e0e0e0;
+}
+
+.detail-placeholder {
+  font-size: 0.78rem;
+  color: #555;
+  text-align: center;
+  margin-top: 40px;
+}
+
+.keyboard-hint {
+  font-size: 0.68rem;
+  color: #555;
+  border-top: 1px solid #1e2e50;
+  padding-top: 6px;
+  margin-top: 2px;
+  flex-shrink: 0;
 }
 </style>
