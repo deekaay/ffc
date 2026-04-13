@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import type { GearItem, GearSlotName } from '@/types/gear'
@@ -34,10 +34,10 @@ const sortKey = ref<'name' | 'dmg'>('name')
 
 const displayList = computed(() => {
   const q = searchQuery.value.toLowerCase().trim()
-  const equippedName = props.item.Name
+  const equippedKey = props.item.Name2 ?? props.item.Name
 
   let items = availableItems.value.filter(i => {
-    if (i.Name === equippedName) return false  // exclude equipped; shown as pinned row
+    if ((i.Name2 ?? i.Name) === equippedKey) return false  // exclude equipped; shown as pinned row
     if (!q) return true
     return i.Name.toLowerCase().includes(q) || (i.Name2 ?? '').toLowerCase().includes(q)
   })
@@ -52,9 +52,16 @@ const displayList = computed(() => {
   return items
 })
 
+// -1 = equipped pin focused, 0 = None row, 1..n = displayList items
 const focusedIndex = ref(0)
+const itemRowRefs = ref<HTMLElement[]>([])
+
+function setItemRef(el: HTMLElement | null, i: number) {
+  if (el) itemRowRefs.value[i] = el
+}
 
 const focusedItem = computed((): GearItem | null => {
+  if (focusedIndex.value === -1) return props.item.Name !== 'None' ? props.item : null
   if (focusedIndex.value === 0) return null
   return displayList.value[focusedIndex.value - 1] ?? null
 })
@@ -78,6 +85,12 @@ watch(dialogVisible, (open) => {
 
 watch([searchQuery, sortKey], () => {
   if (dialogVisible.value) focusedIndex.value = 0
+})
+
+watch(focusedIndex, async (idx) => {
+  if (!dialogVisible.value || idx <= 0) return
+  await nextTick()
+  itemRowRefs.value[idx - 1]?.scrollIntoView({ block: 'nearest' })
 })
 
 const STAT_DISPLAY = [
@@ -106,7 +119,9 @@ function pickItem(item: GearItem) {
 }
 
 function confirmFocused() {
-  if (focusedIndex.value === 0) {
+  if (focusedIndex.value === -1) {
+    pickItem(props.item)
+  } else if (focusedIndex.value === 0) {
     pickItem(emptyItem)
   } else {
     const item = displayList.value[focusedIndex.value - 1]
@@ -183,8 +198,9 @@ function onKeydown(e: KeyboardEvent) {
             <button
               v-if="item.Name !== 'None'"
               class="gear-item-row equipped-pin"
+              :class="{ focused: focusedIndex === -1 }"
               :title="formatStats(item)"
-              @click="pickItem(item)"
+              @click="focusedIndex = -1"
             >
               <span class="equipped-badge">ON</span>
               <img
@@ -208,6 +224,7 @@ function onKeydown(e: KeyboardEvent) {
             <button
               v-for="(gi, i) in displayList"
               :key="gi.Name2 ?? gi.Name"
+              :ref="(el) => setItemRef(el as HTMLElement | null, i)"
               class="gear-item-row"
               :class="{ focused: focusedIndex === i + 1 }"
               :title="formatStats(gi)"
