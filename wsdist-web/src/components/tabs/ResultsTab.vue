@@ -1,18 +1,30 @@
 <script setup lang="ts">
-import { watchEffect } from 'vue'
+import { watchEffect, ref } from 'vue'
 import GearPanel from '@/components/shared/GearPanel.vue'
 import { useSimulationStore } from '@/stores/useSimulationStore'
 import { useCharacterStore } from '@/stores/useCharacterStore'
 import { useBuffStore } from '@/stores/useBuffStore'
 import { useGearStore } from '@/stores/useGearStore'
+import { statGlossary } from '@/data/statGlossary'
 import type { Player } from '@/types/player'
 import type { GearSlotName, GearItem } from '@/types/gear'
 import type { GearContext } from '@/stores/useCharacterStore'
+import { saveEquipmentSet } from '@/composables/useEquipmentSetApi'
+import type { Gearset } from '@/types/gear'
+import Dialog from 'primevue/dialog'
+import Button from 'primevue/button'
+import type { SetResults, TpThreshold } from '@/types/simulation'
 
 const simStore = useSimulationStore()
 const charStore = useCharacterStore()
 const buffStore = useBuffStore()
 const gearStore = useGearStore()
+
+const setShareUrl = ref('')
+const setShareVisible = ref(false)
+const savingContext = ref<string>('')
+const setError = ref('')
+const setCopied = ref(false)
 
 function onGearUpdate(context: GearContext, slot: GearSlotName, item: GearItem) {
   charStore.setGear(context, slot, item)
@@ -82,6 +94,43 @@ function fmt0(v: number | undefined | null): string {
 function fmt1(v: number | undefined | null): string {
   if (v == null || isNaN(v)) return '—'
   return v.toFixed(1)
+}
+
+async function onSaveGearset(gearset: Gearset, ctx: string) {
+  savingContext.value = ctx
+  setError.value = ''
+  setShareUrl.value = ''
+  try {
+    const key = await saveEquipmentSet(gearset)
+    setShareUrl.value = `${window.location.origin}${window.location.pathname}#set/${key}`
+    setShareVisible.value = true
+  } catch (e) {
+    setError.value = e instanceof Error ? e.message : 'Save failed'
+  } finally {
+    savingContext.value = ''
+  }
+}
+
+async function copySetUrl() {
+  try {
+    await navigator.clipboard.writeText(setShareUrl.value)
+    setCopied.value = true
+    setTimeout(() => { setCopied.value = false }, 1500)
+  } catch {
+    setError.value = 'Clipboard write failed — copy the URL manually.'
+  }
+}
+
+function fmtThreshold(threshold: TpThreshold): string {
+  return `${threshold.toLocaleString()} TP`
+}
+
+function isCurrentThreshold(threshold: TpThreshold): boolean {
+  return charStore.wsThreshold === threshold
+}
+
+function optimalThresholdLabel(result: SetResults | null | undefined): string {
+  return result ? fmtThreshold(result.optimalThreshold) : '—'
 }
 
 const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?: (v: unknown) => string }[] }[] = [
@@ -171,7 +220,15 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
 
       <!-- Set 1 -->
       <div class="set-panel">
-        <div class="set-panel-header">Set 1</div>
+        <div class="set-panel-header">
+          Set 1
+          <Button icon="pi pi-save" size="small" text severity="secondary"
+            :loading="savingContext === 'tp1'" title="Save &amp; share TP set"
+            @click="onSaveGearset(charStore.tpGearset, 'tp1')" />
+          <Button icon="pi pi-save" size="small" text severity="secondary"
+            :loading="savingContext === 'ws1'" title="Save &amp; share WS set"
+            @click="onSaveGearset(charStore.wsGearset, 'ws1')" />
+        </div>
         <div class="set-grids">
           <GearPanel
             context="tp1"
@@ -192,7 +249,15 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
 
       <!-- Set 2 -->
       <div class="set-panel">
-        <div class="set-panel-header">Set 2</div>
+        <div class="set-panel-header">
+          Set 2
+          <Button icon="pi pi-save" size="small" text severity="secondary"
+            :loading="savingContext === 'tp2'" title="Save &amp; share TP set"
+            @click="onSaveGearset(charStore.tpGearset2, 'tp2')" />
+          <Button icon="pi pi-save" size="small" text severity="secondary"
+            :loading="savingContext === 'ws2'" title="Save &amp; share WS set"
+            @click="onSaveGearset(charStore.wsGearset2, 'ws2')" />
+        </div>
         <div class="set-grids">
           <GearPanel
             context="tp2"
@@ -240,6 +305,37 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
             <span class="metric-label">DPS</span>
             <span class="metric-value dps-value">{{ fmt1(simStore.set1Results?.dps) }}</span>
           </div>
+          <div class="threshold-section">
+            <div class="threshold-header">
+              <span class="metric-label">TP Threshold Comparison</span>
+              <span class="threshold-best">Best: {{ optimalThresholdLabel(simStore.set1Results) }}</span>
+            </div>
+            <table class="threshold-table">
+              <thead>
+                <tr>
+                  <th>TP</th>
+                  <th>WS Dmg</th>
+                  <th>Time/WS (s)</th>
+                  <th>DPS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in simStore.set1Results?.thresholdComparisons ?? []"
+                  :key="row.threshold"
+                  :class="{ optimal: row.isOptimal, current: isCurrentThreshold(row.threshold) }"
+                >
+                  <td>
+                    {{ fmtThreshold(row.threshold) }}
+                    <span v-if="isCurrentThreshold(row.threshold)" class="threshold-tag">Current</span>
+                  </td>
+                  <td>{{ fmt0(row.wsDamage) }}</td>
+                  <td>{{ fmt1(row.timePerWs) }}</td>
+                  <td>{{ fmt1(row.dps) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Set 2 results -->
@@ -269,6 +365,37 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
             <span class="metric-label">DPS</span>
             <span class="metric-value dps-value">{{ fmt1(simStore.set2Results?.dps) }}</span>
           </div>
+          <div class="threshold-section">
+            <div class="threshold-header">
+              <span class="metric-label">TP Threshold Comparison</span>
+              <span class="threshold-best">Best: {{ optimalThresholdLabel(simStore.set2Results) }}</span>
+            </div>
+            <table class="threshold-table">
+              <thead>
+                <tr>
+                  <th>TP</th>
+                  <th>WS Dmg</th>
+                  <th>Time/WS (s)</th>
+                  <th>DPS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in simStore.set2Results?.thresholdComparisons ?? []"
+                  :key="row.threshold"
+                  :class="{ optimal: row.isOptimal, current: isCurrentThreshold(row.threshold) }"
+                >
+                  <td>
+                    {{ fmtThreshold(row.threshold) }}
+                    <span v-if="isCurrentThreshold(row.threshold)" class="threshold-tag">Current</span>
+                  </td>
+                  <td>{{ fmt0(row.wsDamage) }}</td>
+                  <td>{{ fmt1(row.timePerWs) }}</td>
+                  <td>{{ fmt1(row.dps) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -292,7 +419,16 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
               <td colspan="5">{{ group.label }}</td>
             </tr>
             <tr v-for="row in group.rows" :key="row.key">
-              <td class="stat-label">{{ row.label }}</td>
+              <td class="stat-label">
+                <span class="stat-label-text">{{ row.label }}</span>
+                <button
+                  v-if="statGlossary[row.key]"
+                  type="button"
+                  v-tooltip.bottom="statGlossary[row.key]"
+                  class="stat-help"
+                  :aria-label="`Explain ${row.label}`"
+                >?</button>
+              </td>
               <td class="stat-val">{{ (row.format ?? fmt)(getVal(simStore.players.tp1, row.key)) }}</td>
               <td class="stat-val">{{ (row.format ?? fmt)(getVal(simStore.players.ws1, row.key)) }}</td>
               <td class="stat-val">{{ (row.format ?? fmt)(getVal(simStore.players.tp2, row.key)) }}</td>
@@ -302,6 +438,27 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
         </tbody>
       </table>
     </div>
+
+    <!-- Equipment set share dialog -->
+    <Dialog
+      v-model:visible="setShareVisible"
+      header="Share This Item Set"
+      modal
+      :style="{ width: '420px' }"
+      @hide="setError = ''"
+    >
+      <p class="share-hint">Anyone with this link can load this gear set:</p>
+      <div class="share-url-row">
+        <span class="share-url-text">{{ setShareUrl }}</span>
+        <Button
+          :label="setCopied ? 'Copied!' : 'Copy'"
+          icon="pi pi-copy"
+          size="small"
+          @click="copySetUrl"
+        />
+      </div>
+    </Dialog>
+    <span v-if="setError" class="set-error">{{ setError }}</span>
 
   </div>
 </template>
@@ -340,6 +497,40 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
   color: #a0c4ff;
   text-transform: uppercase;
   letter-spacing: 0.07em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.share-hint {
+  font-size: 0.85rem;
+  color: #a0b8d8;
+  margin: 0 0 10px;
+}
+
+.share-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #0c1428;
+  border: 1px solid #2e3f6a;
+  border-radius: 4px;
+  padding: 6px 10px;
+}
+
+.share-url-text {
+  flex: 1;
+  font-size: 0.78rem;
+  font-family: 'Courier New', monospace;
+  color: #c8e0ff;
+  word-break: break-all;
+}
+
+.set-error {
+  font-size: 0.78rem;
+  color: #ff8080;
+  display: block;
+  margin-top: 4px;
 }
 
 .set-grids {
@@ -409,6 +600,72 @@ const STAT_GROUPS: { label: string; rows: { label: string; key: string; format?:
   color: #7dd8ff;
 }
 
+.threshold-section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #2e3f6a;
+}
+
+.threshold-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.threshold-best {
+  color: #f9d56e;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.threshold-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+}
+
+.threshold-table th,
+.threshold-table td {
+  padding: 5px 6px;
+  text-align: right;
+}
+
+.threshold-table th:first-child,
+.threshold-table td:first-child {
+  text-align: left;
+}
+
+.threshold-table thead th {
+  color: #8fa8d6;
+  font-weight: 700;
+  border-bottom: 1px solid #2e3f6a;
+}
+
+.threshold-table tbody tr + tr td {
+  border-top: 1px solid rgba(46, 63, 106, 0.6);
+}
+
+.threshold-table tbody tr.optimal {
+  background: rgba(125, 216, 255, 0.12);
+}
+
+.threshold-table tbody tr.current td:first-child {
+  color: #ffffff;
+}
+
+.threshold-tag {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: #253b6d;
+  color: #bfe0ff;
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
 /* ── Stats table ──────────────────────────────────── */
 .stats-wrapper {
   overflow-x: auto;
@@ -463,6 +720,35 @@ tbody tr:not(.group-header):hover {
   padding: 4px 12px;
   color: #d0d8f0;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+.stat-label-text {
+  vertical-align: middle;
+}
+
+.stat-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.35rem;
+  border: 1px solid #5e7bbb;
+  border-radius: 999px;
+  background: transparent;
+  color: #9cc4ff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  vertical-align: middle;
+  padding: 0;
+}
+
+.stat-help:focus-visible {
+  outline: 2px solid #7dd8ff;
+  outline-offset: 2px;
 }
 
 .stat-val {
