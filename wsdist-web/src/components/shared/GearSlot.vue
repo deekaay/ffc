@@ -98,12 +98,34 @@ function formatStats(item: GearItem): string {
   return parts.join('\n') || 'No combat stats'
 }
 
-// @ts-ignore — used by confirmFocused() added in Task 4
 const emptyItem: GearItem = { Name: 'None', Name2: 'None', Jobs: [] }
 
 function pickItem(item: GearItem) {
   emit('select', item)
   dialogVisible.value = false
+}
+
+function confirmFocused() {
+  if (focusedIndex.value === 0) {
+    pickItem(emptyItem)
+  } else {
+    const item = displayList.value[focusedIndex.value - 1]
+    if (item) pickItem(item)
+  }
+}
+
+function onKeydown(e: KeyboardEvent) {
+  const total = displayList.value.length + 1 // None row + item rows
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    focusedIndex.value = Math.min(focusedIndex.value + 1, total - 1)
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    focusedIndex.value = Math.max(focusedIndex.value - 1, 0)
+  } else if (e.key === 'Enter') {
+    e.preventDefault()
+    confirmFocused()
+  }
 }
 </script>
 
@@ -154,6 +176,7 @@ function pickItem(item: GearItem) {
             placeholder="Search items..."
             class="gear-search"
             autofocus
+            @keydown="onKeydown"
           />
           <div class="gear-item-list">
             <!-- Pinned equipped row -->
@@ -218,6 +241,9 @@ function pickItem(item: GearItem) {
                 <span class="detail-stat-label">{{ s.label }}</span>
                 <span class="detail-stat-value">{{ s.value }}</span>
               </div>
+            </div>
+            <div style="margin-top: auto; padding-top: 8px">
+              <button class="equip-btn" @click="confirmFocused">Equip</button>
             </div>
           </template>
           <div v-else class="detail-placeholder">
@@ -451,5 +477,21 @@ function pickItem(item: GearItem) {
   padding-top: 6px;
   margin-top: 2px;
   flex-shrink: 0;
+}
+
+.equip-btn {
+  width: 100%;
+  padding: 6px;
+  background: #1a3660;
+  border: 1px solid #5580cc;
+  border-radius: 4px;
+  color: #a0c4ff;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.equip-btn:hover {
+  background: #1e4080;
 }
 </style>
