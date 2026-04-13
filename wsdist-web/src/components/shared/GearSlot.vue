@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import type { GearItem, GearSlotName } from '@/types/gear'
@@ -30,12 +30,67 @@ const availableItems = computed(() => {
   return gearStore.getGearForJob(props.slotName, props.jobCode)
 })
 
-const filteredItems = computed(() => {
+const sortKey = ref<'name' | 'dmg'>('name')
+
+const displayList = computed(() => {
   const q = searchQuery.value.toLowerCase().trim()
-  if (!q) return availableItems.value
-  return availableItems.value.filter(i =>
-    i.Name.toLowerCase().includes(q) || (i.Name2 && i.Name2.toLowerCase().includes(q))
-  )
+  const equippedKey = props.item.Name2 ?? props.item.Name
+
+  let items = availableItems.value.filter(i => {
+    if ((i.Name2 ?? i.Name) === equippedKey) return false  // exclude equipped; shown as pinned row
+    if (!q) return true
+    return i.Name.toLowerCase().includes(q) || (i.Name2 ?? '').toLowerCase().includes(q)
+  })
+
+  if (sortKey.value === 'name') {
+    items = [...items].sort((a, b) => a.Name.localeCompare(b.Name))
+  } else {
+    // dmg high→low; items without DMG sort to the end
+    items = [...items].sort((a, b) => (b.DMG ?? -1) - (a.DMG ?? -1))
+  }
+
+  return items
+})
+
+// -1 = equipped pin focused, 0 = None row, 1..n = displayList items
+const focusedIndex = ref(0)
+const itemRowRefs = ref<HTMLElement[]>([])
+
+function setItemRef(el: HTMLElement | null, i: number) {
+  if (el) itemRowRefs.value[i] = el
+}
+
+const focusedItem = computed((): GearItem | null => {
+  if (focusedIndex.value === -1) return props.item.Name !== 'None' ? props.item : null
+  if (focusedIndex.value === 0) return null
+  return displayList.value[focusedIndex.value - 1] ?? null
+})
+
+function detailStats(item: GearItem): { label: string; value: string }[] {
+  return STAT_DISPLAY
+    .filter(stat => item[stat] !== undefined && item[stat] !== 0)
+    .map(stat => {
+      const val = item[stat]
+      const formatted = typeof val === 'number' && val > 0 ? `+${val}` : String(val)
+      return { label: stat, value: formatted }
+    })
+}
+
+watch(dialogVisible, (open) => {
+  if (!open) return
+  searchQuery.value = ''
+  sortKey.value = 'name'
+  focusedIndex.value = 0
+})
+
+watch([searchQuery, sortKey], () => {
+  if (dialogVisible.value) focusedIndex.value = 0
+})
+
+watch(focusedIndex, async (idx) => {
+  if (!dialogVisible.value || idx <= 0) return
+  await nextTick()
+  itemRowRefs.value[idx - 1]?.scrollIntoView({ block: 'nearest' })
 })
 
 const STAT_DISPLAY = [
@@ -62,6 +117,31 @@ function pickItem(item: GearItem) {
   emit('select', item)
   dialogVisible.value = false
 }
+
+function confirmFocused() {
+  if (focusedIndex.value === -1) {
+    pickItem(props.item)
+  } else if (focusedIndex.value === 0) {
+    pickItem(emptyItem)
+  } else {
+    const item = displayList.value[focusedIndex.value - 1]
+    if (item) pickItem(item)
+  }
+}
+
+function onKeydown(e: KeyboardEvent) {
+  const total = displayList.value.length + 1 // None row + item rows
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    focusedIndex.value = Math.min(focusedIndex.value + 1, total - 1)
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    focusedIndex.value = Math.max(focusedIndex.value - 1, 0)
+  } else if (e.key === 'Enter') {
+    e.preventDefault()
+    confirmFocused()
+  }
+}
 </script>
 
 <template>
@@ -86,36 +166,108 @@ function pickItem(item: GearItem) {
       v-model:visible="dialogVisible"
       :header="`${label ?? slotName} — ${jobCode.toUpperCase()}`"
       modal
-      :style="{ width: '500px', maxHeight: '80vh' }"
+      :style="{ width: '720px', maxHeight: '80vh' }"
       class="gear-dialog"
     >
-      <InputText
-        v-model="searchQuery"
-        placeholder="Search items..."
-        class="gear-search"
-        autofocus
-      />
-      <div class="gear-item-list">
-        <button class="gear-item-row" @click="pickItem(emptyItem)">
-          <span class="gear-item-name">None</span>
-        </button>
-        <button
-          v-for="gi in filteredItems"
-          :key="gi.Name2 ?? gi.Name"
-          class="gear-item-row"
-          :class="{ selected: gi.Name === item.Name }"
-          :title="formatStats(gi)"
-          @click="pickItem(gi)"
-        >
-          <img
-            v-if="gearStore.getIconUrl(gi.Name2 ?? gi.Name)"
-            :src="gearStore.getIconUrl(gi.Name2 ?? gi.Name)!"
-            class="gear-icon-sm"
-            loading="lazy"
+      <div class="gear-picker-body">
+
+        <!-- Left column: search + sort + list -->
+        <div class="gear-list-col">
+          <div class="sort-bar">
+            <span class="sort-bar-label">Sort:</span>
+            <button
+              class="sort-pill"
+              :class="{ active: sortKey === 'name' }"
+              @click="sortKey = 'name'"
+            >Name</button>
+            <button
+              class="sort-pill"
+              :class="{ active: sortKey === 'dmg' }"
+              @click="sortKey = 'dmg'"
+            >DMG</button>
+          </div>
+          <InputText
+            v-model="searchQuery"
+            placeholder="Search items..."
+            class="gear-search"
+            autofocus
+            @keydown="onKeydown"
           />
-          <span class="gear-item-name">{{ gi.Name }}</span>
-          <span class="gear-item-stats">{{ formatStats(gi).replace(/\n/g, '  ') }}</span>
-        </button>
+          <div class="gear-item-list">
+            <!-- Pinned equipped row -->
+            <button
+              v-if="item.Name !== 'None'"
+              class="gear-item-row equipped-pin"
+              :class="{ focused: focusedIndex === -1 }"
+              :title="formatStats(item)"
+              @click="focusedIndex = -1"
+            >
+              <span class="equipped-badge">ON</span>
+              <img
+                v-if="iconUrl"
+                :src="iconUrl"
+                class="gear-icon-sm"
+                loading="lazy"
+              />
+              <span class="gear-item-name">{{ item.Name }}</span>
+              <span class="gear-item-stats">{{ formatStats(item).replace(/\n/g, '  ') }}</span>
+            </button>
+            <!-- None row -->
+            <button
+              class="gear-item-row"
+              :class="{ focused: focusedIndex === 0 }"
+              @click="focusedIndex = 0"
+            >
+              <span class="gear-item-name">None</span>
+            </button>
+            <!-- Item rows -->
+            <button
+              v-for="(gi, i) in displayList"
+              :key="gi.Name2 ?? gi.Name"
+              :ref="(el) => setItemRef(el as HTMLElement | null, i)"
+              class="gear-item-row"
+              :class="{ focused: focusedIndex === i + 1 }"
+              :title="formatStats(gi)"
+              @click="focusedIndex = i + 1"
+            >
+              <img
+                v-if="gearStore.getIconUrl(gi.Name2 ?? gi.Name)"
+                :src="gearStore.getIconUrl(gi.Name2 ?? gi.Name)!"
+                class="gear-icon-sm"
+                loading="lazy"
+              />
+              <span class="gear-item-name">{{ gi.Name }}</span>
+              <span class="gear-item-stats">{{ formatStats(gi).replace(/\n/g, '  ') }}</span>
+            </button>
+          </div>
+          <!-- Keyboard hint -->
+          <div class="keyboard-hint">↑↓ navigate &nbsp;·&nbsp; Enter equip &nbsp;·&nbsp; Esc close</div>
+        </div>
+
+        <!-- Right column: detail pane -->
+        <div class="gear-detail-col">
+          <template v-if="focusedItem">
+            <div class="detail-name">{{ focusedItem.Name }}</div>
+            <div class="detail-meta">{{ focusedItem.Type ?? 'Equipment' }}</div>
+            <div class="detail-stats-list">
+              <div
+                v-for="s in detailStats(focusedItem)"
+                :key="s.label"
+                class="detail-stat-row"
+              >
+                <span class="detail-stat-label">{{ s.label }}</span>
+                <span class="detail-stat-value">{{ s.value }}</span>
+              </div>
+            </div>
+            <div style="margin-top: auto; padding-top: 8px">
+              <button class="equip-btn" @click="confirmFocused">Equip</button>
+            </div>
+          </template>
+          <div v-else class="detail-placeholder">
+            Select an item to see stats
+          </div>
+        </div>
+
       </div>
     </Dialog>
   </div>
@@ -171,7 +323,7 @@ function pickItem(item: GearItem) {
 }
 
 .gear-item-list {
-  max-height: 60vh;
+  flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -184,7 +336,7 @@ function pickItem(item: GearItem) {
   gap: 8px;
   padding: 4px 6px;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   text-align: left;
   border-radius: 3px;
@@ -195,10 +347,6 @@ function pickItem(item: GearItem) {
 
 .gear-item-row:hover {
   background: #1e2e50;
-}
-
-.gear-item-row.selected {
-  background: #1a3660;
 }
 
 .gear-icon-sm {
@@ -219,5 +367,148 @@ function pickItem(item: GearItem) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.sort-bar-label {
+  font-size: 0.72rem;
+  color: #8899bb;
+}
+
+.sort-pill {
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid #2e3f6a;
+  background: transparent;
+  color: #888;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.sort-pill.active {
+  border-color: #5580cc;
+  background: #1a2a4a;
+  color: #a0c4ff;
+}
+
+.gear-item-row.equipped-pin {
+  background: #1e3a20;
+  border: 1px solid #3a6040;
+  border-radius: 3px;
+}
+
+.equipped-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #7acc88;
+  background: #1a4020;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.gear-item-row.focused {
+  background: #1a3660;
+  border: 1px solid #5580cc;
+  outline: none;
+}
+
+/* ── Two-column picker layout ─────────────────── */
+.gear-picker-body {
+  display: flex;
+  gap: 0;
+  height: 480px;
+}
+
+.gear-list-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  padding: 4px 8px 8px;
+  border-right: 1px solid #2e3f6a;
+  min-width: 0;
+}
+
+.gear-detail-col {
+  width: 220px;
+  flex-shrink: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.detail-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #a0c4ff;
+}
+
+.detail-meta {
+  font-size: 0.75rem;
+  color: #8899bb;
+}
+
+.detail-stats-list {
+  border-top: 1px solid #2e3f6a;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.detail-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+}
+
+.detail-stat-label {
+  color: #8899bb;
+}
+
+.detail-stat-value {
+  color: #e0e0e0;
+}
+
+.detail-placeholder {
+  font-size: 0.78rem;
+  color: #555;
+  text-align: center;
+  margin-top: 40px;
+}
+
+.keyboard-hint {
+  font-size: 0.68rem;
+  color: #555;
+  border-top: 1px solid #1e2e50;
+  padding-top: 6px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.equip-btn {
+  width: 100%;
+  padding: 6px;
+  background: #1a3660;
+  border: 1px solid #5580cc;
+  border-radius: 4px;
+  color: #a0c4ff;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.equip-btn:hover {
+  background: #1e4080;
 }
 </style>
